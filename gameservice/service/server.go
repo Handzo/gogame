@@ -47,7 +47,7 @@ func (s *Server) Run() error {
 	serveropts := []grpc.UnaryServerInterceptor{
 		interceptor.RequireMetadataKeyServerInterceptor("remote"),
 		interceptor.SpanLoggingServerInterceptor(s.logger),
-		interceptor.AuthServerInterceptor(s.repo),
+		AuthServerInterceptor(s.repo),
 		otgrpc.OpenTracingServerInterceptor(s.tracer),
 	}
 
