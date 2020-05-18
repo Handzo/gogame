@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+service ApiGatewayService {
+    rpc Send(Request) returns (Response);
+}
+
+message Request {
+    uint64 key = 1;
+    string type = 2;
+    bytes payload = 3;
+}
+
+message Response {
+    uint64 key = 1;
+    string type = 2;
+    bytes payload = 3;
+}

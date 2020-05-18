@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+service GameService {
+    rpc OpenSession(OpenSessionRequest) returns (OpenSessionResponse);
+    rpc CloseSession(CloseSessionRequest) returns (CloseSessionResponse);
+}
+
+message OpenSessionRequest {
+    string token = 1;
+}
+
+message OpenSessionResponse {
+    string session_id = 1;
+    string player_id = 2;
+}
+
+message CloseSessionRequest {}
+message CloseSessionResponse {}
