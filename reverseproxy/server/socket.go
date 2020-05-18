@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"io"
 	"time"
 
@@ -32,16 +31,12 @@ func newSocket(conn *websocket.Conn) *socket {
 }
 
 func (this *socket) close() {
-	fmt.Println("CLOSE SOCKET")
 	this.conn.Close()
 	close(this.writeChan)
 }
 
 func (this *socket) writePump() {
-	defer func() {
-		fmt.Println("stop write pump")
-		this.conn.Close()
-	}()
+	defer this.conn.Close()
 
 	for {
 		message, ok := <-this.writeChan

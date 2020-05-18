@@ -10,4 +10,5 @@ type GameRepository interface {
 	SelectOrInsertPlayer(context.Context, *model.Player) (bool, error)
 	CreateSession(context.Context, *model.Session) error
 	UpdateSessions(context.Context, ...*model.Session) error
+	GetOpenedSessionForRemote(context.Context, string) (*model.Session, error)
 }

@@ -72,6 +72,24 @@ func (r *pgGameRepository) CreateSession(ctx context.Context, session *model.Ses
 	return err
 }
 
+func (r *pgGameRepository) GetOpenedSessionForRemote(ctx context.Context, remote string) (*model.Session, error) {
+	session := &model.Session{}
+	err := r.DB.ModelContext(ctx, session).
+		Where(`remote = ?`, remote).
+		Where(`closed_at IS NULL`).
+		Select()
+	if err != nil {
+		if err != pg.ErrNoRows {
+			return nil, err
+		}
+
+		// no session has been found
+		return nil, nil
+	}
+
+	return session, nil
+}
+
 func (r *pgGameRepository) UpdateSessions(ctx context.Context, sessions ...*model.Session) error {
 	m := make([]interface{}, len(sessions))
 	for i, s := range sessions {

@@ -39,11 +39,11 @@ func NewProxyServer(api apipb.ApiGatewayServiceClient, redis *redis.Client, logg
 		tracer: tracer,
 	}
 
-	proxy.mux.HandleFunc("/", proxy.connect)
+	proxy.mux.HandleFunc("/", proxy.handleFunc)
 	return proxy
 }
 
-func (s *proxyServer) connect(w http.ResponseWriter, r *http.Request) {
+func (s *proxyServer) handleFunc(w http.ResponseWriter, r *http.Request) {
 	// TODO: set span for socket connection?
 	logger := s.logger.Bg()
 	conn, err := upgrader.Upgrade(w, r, nil)
@@ -65,7 +65,8 @@ func (s *proxyServer) connect(w http.ResponseWriter, r *http.Request) {
 
 	defer pubsub.Close()
 
-	ctx := metadata.AppendToOutgoingContext(r.Context(), "remote", remote)
+	ctx := context.WithValue(r.Context(), "remote", remote)
+	ctx = metadata.AppendToOutgoingContext(ctx, "remote", remote)
 
 	socket := newSocket(conn)
 	defer socket.close()
@@ -82,6 +83,13 @@ func (s *proxyServer) connect(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
+	if err := s.connect(ctx); err != nil {
+		logger.Warn(err)
+		return
+	}
+
+	defer s.disconnect(ctx)
+
 	for {
 		if err := s.listen(ctx, socket); err != nil {
 			logger.Warn(err)
@@ -97,12 +105,10 @@ func (s *proxyServer) listen(ctx context.Context, wsocket *socket) error {
 	}
 
 	span, ctx, logger := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
+	span.SetTag("remote", ctx.Value("remote"))
 	defer span.Finish()
 
 	logger.Info(string(reqData))
-
-	// TODO: return error?
-	// wsocket.WriteMessage(reqData)
 
 	req := &apipb.Request{}
 	err = jsonpb.Unmarshal(bytes.NewReader(reqData), req)
@@ -118,7 +124,6 @@ func (s *proxyServer) listen(ctx context.Context, wsocket *socket) error {
 	logger.Info(req)
 
 	res, err := s.api.Send(opentracing.ContextWithSpan(ctx, span), req)
-
 	if err != nil {
 		if r, err := responseWithError(wsocket, req, err); err != nil {
 			return err
@@ -137,6 +142,28 @@ func (s *proxyServer) listen(ctx context.Context, wsocket *socket) error {
 
 	logger.Info(string(r))
 	return nil
+}
+
+func (s *proxyServer) connect(ctx context.Context) error {
+	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
+	span.SetTag("remote", ctx.Value("remote"))
+	defer span.Finish()
+
+	// send connection
+	_, err := s.api.Connect(ctx, &apipb.Request{})
+
+	return err
+}
+
+func (s *proxyServer) disconnect(ctx context.Context) error {
+	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
+	span.SetTag("remote", ctx.Value("remote"))
+	defer span.Finish()
+
+	// send connection
+	_, err := s.api.Disconnect(ctx, &apipb.Request{})
+
+	return err
 }
 
 func (s *proxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {

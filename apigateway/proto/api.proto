@@ -2,6 +2,8 @@ syntax = "proto3";
 
 service ApiGatewayService {
     rpc Send(Request) returns (Response);
+    rpc Connect(Request) returns (Response);
+    rpc Disconnect(Request) returns (Response);
 }
 
 message Request {

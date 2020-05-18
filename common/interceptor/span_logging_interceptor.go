@@ -22,7 +22,6 @@ func SpanLoggingServerInterceptor(factory log.Factory) grpc.UnaryServerIntercept
 
 		logger.With(log.String("type", "request")).Info(req)
 
-		logger.Info("span logging")
 		reply, err := handler(ctx, req)
 
 		logger.With(

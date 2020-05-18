@@ -10,7 +10,6 @@ import (
 	pb "github.com/Handzo/gogame/gameservice/proto"
 	"github.com/Handzo/gogame/gameservice/repository"
 	"github.com/Handzo/gogame/gameservice/repository/model"
-	"github.com/Handzo/gogame/gameservice/repository/postgres"
 	"github.com/Handzo/gogame/gameservice/service/pubsub"
 	"github.com/go-redis/redis"
 	"github.com/opentracing/opentracing-go"
@@ -25,7 +24,7 @@ type gameService struct {
 	pubsub  *pubsub.PubSub
 }
 
-func NewGameService(authsvc authpb.AuthServiceClient, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) pb.GameServiceServer {
+func NewGameService(authsvc authpb.AuthServiceClient, repo repository.GameRepository, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) pb.GameServiceServer {
 	var rdb *redis.Client
 	{
 		rdb = redis.NewClient(&redis.Options{
@@ -44,10 +43,7 @@ func NewGameService(authsvc authpb.AuthServiceClient, tracer opentracing.Tracer,
 		authsvc: authsvc,
 		tracer:  tracer,
 		logger:  logger,
-		repo: postgres.New(
-			tracing.New("game-db-pg", metricsFactory, logger),
-			logger,
-		),
+		repo:    repo,
 		pubsub: pubsub.New(
 			rdb,
 			tracing.New("game-pubsub-redis", metricsFactory, logger),
@@ -102,6 +98,16 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 }
 
 func (g *gameService) CloseSession(ctx context.Context, req *pb.CloseSessionRequest) (*pb.CloseSessionResponse, error) {
+	session, err := g.repo.GetOpenedSessionForRemote(ctx, ctx.Value("remote").(string))
+
+	if err != nil {
+		return nil, err
+	}
+
+	if session != nil {
+		g.closeSession(ctx, session)
+	}
+
 	return &pb.CloseSessionResponse{}, nil
 }
 
@@ -111,8 +117,10 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 		return err
 	}
 
-	g.pubsub.Publish(ctx, ctx.Value("remote").(string), &pubsub.CloseEvent{
-		Event:     "Closssss",
+	remote := ctx.Value("remote").(string)
+
+	g.pubsub.Publish(ctx, remote, &pubsub.CloseEvent{
+		Event:     "CloseSession",
 		SessionId: session.Id,
 		PlayerId:  session.PlayerId,
 	})

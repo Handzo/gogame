@@ -6,7 +6,10 @@ import (
 	authpb "github.com/Handzo/gogame/authservice/proto"
 	"github.com/Handzo/gogame/common/interceptor"
 	"github.com/Handzo/gogame/common/log"
+	"github.com/Handzo/gogame/common/tracing"
 	pb "github.com/Handzo/gogame/gameservice/proto"
+	"github.com/Handzo/gogame/gameservice/repository"
+	"github.com/Handzo/gogame/gameservice/repository/postgres"
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	"github.com/opentracing/opentracing-go"
 	"github.com/uber/jaeger-lib/metrics"
@@ -18,14 +21,20 @@ type Server struct {
 	service pb.GameServiceServer
 	tracer  opentracing.Tracer
 	logger  log.Factory
+	repo    repository.GameRepository
 }
 
 func NewServer(host string, authsvc authpb.AuthServiceClient, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) *Server {
+	repo := postgres.New(
+		tracing.New("game-db-pg", metricsFactory, logger),
+		logger,
+	)
 	return &Server{
 		host:    host,
-		service: NewGameService(authsvc, tracer, metricsFactory, logger),
+		service: NewGameService(authsvc, repo, tracer, metricsFactory, logger),
 		tracer:  tracer,
 		logger:  logger,
+		repo:    repo,
 	}
 }
 
@@ -37,8 +46,9 @@ func (s *Server) Run() error {
 
 	serveropts := []grpc.UnaryServerInterceptor{
 		interceptor.RequireMetadataKeyServerInterceptor("remote"),
-		otgrpc.OpenTracingServerInterceptor(s.tracer),
 		interceptor.SpanLoggingServerInterceptor(s.logger),
+		interceptor.AuthServerInterceptor(s.repo),
+		otgrpc.OpenTracingServerInterceptor(s.tracer),
 	}
 
 	grpcServer := grpc.NewServer(grpc.UnaryInterceptor(interceptor.ChainUnaryServer(serveropts...)))

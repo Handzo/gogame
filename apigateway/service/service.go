@@ -35,3 +35,16 @@ type apiService struct {
 func (s apiService) Send(ctx context.Context, req *pb.Request) (*pb.Response, error) {
 	return s.router.Route(ctx, req)
 }
+
+func (s apiService) Connect(ctx context.Context, req *pb.Request) (*pb.Response, error) {
+	s.logger.For(ctx).Info("New connection", log.String("remote", ctx.Value("remote").(string)))
+	return &pb.Response{}, nil
+}
+
+func (s apiService) Disconnect(ctx context.Context, req *pb.Request) (*pb.Response, error) {
+	s.logger.For(ctx).Info("Disconnect", log.String("remote", ctx.Value("remote").(string)))
+
+	// close game session if exists
+	_, err := s.gamesvc.CloseSession(ctx, &gamepb.CloseSessionRequest{})
+	return &pb.Response{}, err
+}
