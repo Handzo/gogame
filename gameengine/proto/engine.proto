@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+service GameEngine {
+    rpc StartNewGame(StartNewGameRequest) returns (StartNewGameResponse);
+    rpc NewRound(NewRoundRequest) returns (NewRoundResponse);
+    rpc Move(MoveRequest) returns (MoveResponse);
+}
+
+message StartNewGameRequest {}
+message StartNewGameResponse {
+    string signature = 1;
+}
+
+message NewRoundRequest {
+    string signature = 1;
+}
+message NewRoundResponse {
+    string signature = 1;
+}
+
+message MoveRequest {
+    string signature = 1;
+    string card = 2;
+}
+
+message MoveResponse {
+    string signature = 1;
+}

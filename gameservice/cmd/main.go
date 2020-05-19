@@ -9,6 +9,7 @@ import (
 	"github.com/Handzo/gogame/common/interceptor"
 	"github.com/Handzo/gogame/common/log"
 	"github.com/Handzo/gogame/common/tracing"
+	enginepb "github.com/Handzo/gogame/gameengine/proto"
 	"github.com/Handzo/gogame/gameservice/service"
 	"github.com/grpc-ecosystem/grpc-opentracing/go/otgrpc"
 	"github.com/uber/jaeger-lib/metrics"
@@ -17,8 +18,9 @@ import (
 )
 
 var (
-	port     = flag.Int("port", 7003, "game service port")
-	authport = flag.Int("auth", 7002, "auth service port")
+	port       = flag.Int("port", 7003, "game service port")
+	authport   = flag.Int("auth", 7002, "auth service port")
+	engineport = flag.Int("engine", 7004, "game engine service port")
 )
 
 func main() {
@@ -46,8 +48,20 @@ func main() {
 		authsvc = authpb.NewAuthServiceClient(conn)
 	}
 
+	// game engine
+	var enginesvc enginepb.GameEngineClient
+	{
+		portStr := net.JoinHostPort("localhost", fmt.Sprintf("%d", *authport))
+		conn, err := grpc.Dial(portStr, opts...)
+		if err != nil {
+			logger.Bg().Fatal(err)
+		}
+		defer conn.Close()
+		authsvc = authpb.NewAuthServiceClient(conn)
+	}
+
 	host := net.JoinHostPort("localhost", fmt.Sprintf("%d", *port))
-	server := service.NewServer(host, authsvc, tracer, metricsFactory, logger)
+	server := service.NewServer(host, authsvc, enginesvc, tracer, metricsFactory, logger)
 
 	logger.Bg().Fatal(server.Run())
 }

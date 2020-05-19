@@ -7,6 +7,7 @@ import (
 	"github.com/Handzo/gogame/common/interceptor"
 	"github.com/Handzo/gogame/common/log"
 	"github.com/Handzo/gogame/common/tracing"
+	enginepb "github.com/Handzo/gogame/gameengine/proto"
 	pb "github.com/Handzo/gogame/gameservice/proto"
 	"github.com/Handzo/gogame/gameservice/repository"
 	"github.com/Handzo/gogame/gameservice/repository/postgres"
@@ -24,14 +25,14 @@ type Server struct {
 	repo    repository.GameRepository
 }
 
-func NewServer(host string, authsvc authpb.AuthServiceClient, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) *Server {
+func NewServer(host string, authsvc authpb.AuthServiceClient, enginesvc enginepb.GameEngineClient, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) *Server {
 	repo := postgres.New(
 		tracing.New("game-db-pg", metricsFactory, logger),
 		logger,
 	)
 	return &Server{
 		host:    host,
-		service: NewGameService(authsvc, repo, tracer, metricsFactory, logger),
+		service: NewGameService(authsvc, enginesvc, repo, tracer, metricsFactory, logger),
 		tracer:  tracer,
 		logger:  logger,
 		repo:    repo,

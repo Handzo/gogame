@@ -7,6 +7,7 @@ import (
 	authpb "github.com/Handzo/gogame/authservice/proto"
 	"github.com/Handzo/gogame/common/log"
 	"github.com/Handzo/gogame/common/tracing"
+	enginepb "github.com/Handzo/gogame/gameengine/proto"
 	pb "github.com/Handzo/gogame/gameservice/proto"
 	"github.com/Handzo/gogame/gameservice/repository"
 	"github.com/Handzo/gogame/gameservice/repository/model"
@@ -17,14 +18,15 @@ import (
 )
 
 type gameService struct {
-	authsvc authpb.AuthServiceClient
-	tracer  opentracing.Tracer
-	logger  log.Factory
-	repo    repository.GameRepository
-	pubsub  *pubsub.PubSub
+	authsvc   authpb.AuthServiceClient
+	enginesvc enginepb.GameEngineClient
+	tracer    opentracing.Tracer
+	logger    log.Factory
+	repo      repository.GameRepository
+	pubsub    *pubsub.PubSub
 }
 
-func NewGameService(authsvc authpb.AuthServiceClient, repo repository.GameRepository, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) pb.GameServiceServer {
+func NewGameService(authsvc authpb.AuthServiceClient, enginesvc enginepb.GameEngineClient, repo repository.GameRepository, tracer opentracing.Tracer, metricsFactory metrics.Factory, logger log.Factory) pb.GameServiceServer {
 	var rdb *redis.Client
 	{
 		rdb = redis.NewClient(&redis.Options{
