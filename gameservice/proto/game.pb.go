@@ -170,30 +170,239 @@ func (m *CloseSessionResponse) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_CloseSessionResponse proto.InternalMessageInfo
 
+// table
+type CreateTableRequest struct {
+	UnitType             string   `protobuf:"bytes,1,opt,name=unit_type,json=unitType,proto3" json:"unit_type,omitempty"`
+	Bet                  uint32   `protobuf:"varint,2,opt,name=bet,proto3" json:"bet,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateTableRequest) Reset()         { *m = CreateTableRequest{} }
+func (m *CreateTableRequest) String() string { return proto.CompactTextString(m) }
+func (*CreateTableRequest) ProtoMessage()    {}
+func (*CreateTableRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{4}
+}
+
+func (m *CreateTableRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateTableRequest.Unmarshal(m, b)
+}
+func (m *CreateTableRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateTableRequest.Marshal(b, m, deterministic)
+}
+func (m *CreateTableRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateTableRequest.Merge(m, src)
+}
+func (m *CreateTableRequest) XXX_Size() int {
+	return xxx_messageInfo_CreateTableRequest.Size(m)
+}
+func (m *CreateTableRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateTableRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateTableRequest proto.InternalMessageInfo
+
+func (m *CreateTableRequest) GetUnitType() string {
+	if m != nil {
+		return m.UnitType
+	}
+	return ""
+}
+
+func (m *CreateTableRequest) GetBet() uint32 {
+	if m != nil {
+		return m.Bet
+	}
+	return 0
+}
+
+type CreateTableResponse struct {
+	TableId              string   `protobuf:"bytes,1,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
+	UnitType             string   `protobuf:"bytes,2,opt,name=unit_type,json=unitType,proto3" json:"unit_type,omitempty"`
+	Bet                  uint32   `protobuf:"varint,3,opt,name=bet,proto3" json:"bet,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *CreateTableResponse) Reset()         { *m = CreateTableResponse{} }
+func (m *CreateTableResponse) String() string { return proto.CompactTextString(m) }
+func (*CreateTableResponse) ProtoMessage()    {}
+func (*CreateTableResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{5}
+}
+
+func (m *CreateTableResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_CreateTableResponse.Unmarshal(m, b)
+}
+func (m *CreateTableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_CreateTableResponse.Marshal(b, m, deterministic)
+}
+func (m *CreateTableResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_CreateTableResponse.Merge(m, src)
+}
+func (m *CreateTableResponse) XXX_Size() int {
+	return xxx_messageInfo_CreateTableResponse.Size(m)
+}
+func (m *CreateTableResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_CreateTableResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_CreateTableResponse proto.InternalMessageInfo
+
+func (m *CreateTableResponse) GetTableId() string {
+	if m != nil {
+		return m.TableId
+	}
+	return ""
+}
+
+func (m *CreateTableResponse) GetUnitType() string {
+	if m != nil {
+		return m.UnitType
+	}
+	return ""
+}
+
+func (m *CreateTableResponse) GetBet() uint32 {
+	if m != nil {
+		return m.Bet
+	}
+	return 0
+}
+
+type JoinTableRequest struct {
+	TableId              string   `protobuf:"bytes,1,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *JoinTableRequest) Reset()         { *m = JoinTableRequest{} }
+func (m *JoinTableRequest) String() string { return proto.CompactTextString(m) }
+func (*JoinTableRequest) ProtoMessage()    {}
+func (*JoinTableRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{6}
+}
+
+func (m *JoinTableRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JoinTableRequest.Unmarshal(m, b)
+}
+func (m *JoinTableRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JoinTableRequest.Marshal(b, m, deterministic)
+}
+func (m *JoinTableRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JoinTableRequest.Merge(m, src)
+}
+func (m *JoinTableRequest) XXX_Size() int {
+	return xxx_messageInfo_JoinTableRequest.Size(m)
+}
+func (m *JoinTableRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_JoinTableRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JoinTableRequest proto.InternalMessageInfo
+
+func (m *JoinTableRequest) GetTableId() string {
+	if m != nil {
+		return m.TableId
+	}
+	return ""
+}
+
+type JoinTableResponse struct {
+	TableId              string   `protobuf:"bytes,1,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
+	UnitType             string   `protobuf:"bytes,2,opt,name=unit_type,json=unitType,proto3" json:"unit_type,omitempty"`
+	Bet                  uint32   `protobuf:"varint,3,opt,name=bet,proto3" json:"bet,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *JoinTableResponse) Reset()         { *m = JoinTableResponse{} }
+func (m *JoinTableResponse) String() string { return proto.CompactTextString(m) }
+func (*JoinTableResponse) ProtoMessage()    {}
+func (*JoinTableResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{7}
+}
+
+func (m *JoinTableResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_JoinTableResponse.Unmarshal(m, b)
+}
+func (m *JoinTableResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_JoinTableResponse.Marshal(b, m, deterministic)
+}
+func (m *JoinTableResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_JoinTableResponse.Merge(m, src)
+}
+func (m *JoinTableResponse) XXX_Size() int {
+	return xxx_messageInfo_JoinTableResponse.Size(m)
+}
+func (m *JoinTableResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_JoinTableResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_JoinTableResponse proto.InternalMessageInfo
+
+func (m *JoinTableResponse) GetTableId() string {
+	if m != nil {
+		return m.TableId
+	}
+	return ""
+}
+
+func (m *JoinTableResponse) GetUnitType() string {
+	if m != nil {
+		return m.UnitType
+	}
+	return ""
+}
+
+func (m *JoinTableResponse) GetBet() uint32 {
+	if m != nil {
+		return m.Bet
+	}
+	return 0
+}
+
 func init() {
 	proto.RegisterType((*OpenSessionRequest)(nil), "OpenSessionRequest")
 	proto.RegisterType((*OpenSessionResponse)(nil), "OpenSessionResponse")
 	proto.RegisterType((*CloseSessionRequest)(nil), "CloseSessionRequest")
 	proto.RegisterType((*CloseSessionResponse)(nil), "CloseSessionResponse")
+	proto.RegisterType((*CreateTableRequest)(nil), "CreateTableRequest")
+	proto.RegisterType((*CreateTableResponse)(nil), "CreateTableResponse")
+	proto.RegisterType((*JoinTableRequest)(nil), "JoinTableRequest")
+	proto.RegisterType((*JoinTableResponse)(nil), "JoinTableResponse")
 }
 
 func init() { proto.RegisterFile("proto/game.proto", fileDescriptor_5309ac3f9cbe5f84) }
 
 var fileDescriptor_5309ac3f9cbe5f84 = []byte{
-	// 201 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0x28, 0xca, 0x2f,
-	0xc9, 0xd7, 0x4f, 0x4f, 0xcc, 0x4d, 0xd5, 0x03, 0x33, 0x95, 0xb4, 0xb8, 0x84, 0xfc, 0x0b, 0x52,
-	0xf3, 0x82, 0x53, 0x8b, 0x8b, 0x33, 0xf3, 0xf3, 0x82, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84,
-	0x44, 0xb8, 0x58, 0x4b, 0xf2, 0xb3, 0x53, 0xf3, 0x24, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0x20,
-	0x1c, 0xa5, 0x40, 0x2e, 0x61, 0x14, 0xb5, 0xc5, 0x05, 0xf9, 0x79, 0xc5, 0xa9, 0x42, 0xb2, 0x5c,
-	0x5c, 0xc5, 0x10, 0xa1, 0xf8, 0xcc, 0x14, 0xa8, 0x0e, 0x4e, 0xa8, 0x88, 0x67, 0x8a, 0x90, 0x34,
-	0x17, 0x67, 0x41, 0x4e, 0x62, 0x65, 0x6a, 0x11, 0x48, 0x96, 0x09, 0x2c, 0xcb, 0x01, 0x11, 0xf0,
-	0x4c, 0x51, 0x12, 0xe5, 0x12, 0x76, 0xce, 0xc9, 0x2f, 0x4e, 0x45, 0xb5, 0x5f, 0x49, 0x8c, 0x4b,
-	0x04, 0x55, 0x18, 0x62, 0x95, 0x51, 0x0b, 0x23, 0x17, 0xb7, 0x7b, 0x62, 0x6e, 0x6a, 0x70, 0x6a,
-	0x51, 0x59, 0x66, 0x72, 0xaa, 0x90, 0x05, 0x17, 0x37, 0x92, 0x8b, 0x84, 0x84, 0xf5, 0x30, 0xfd,
-	0x22, 0x25, 0xa2, 0x87, 0xcd, 0xd1, 0xd6, 0x5c, 0x3c, 0xc8, 0x36, 0x08, 0x89, 0xe8, 0x61, 0x71,
-	0x87, 0x94, 0xa8, 0x1e, 0x36, 0x67, 0x24, 0xb1, 0x81, 0xc3, 0xce, 0x18, 0x10, 0x00, 0x00, 0xff,
-	0xff, 0xb7, 0xcf, 0x6b, 0xed, 0x4f, 0x01, 0x00, 0x00,
+	// 322 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0xcf, 0x4b, 0xc3, 0x30,
+	0x14, 0xc7, 0xd9, 0x86, 0xba, 0xbe, 0x29, 0x6c, 0xaf, 0x9d, 0x68, 0x87, 0x20, 0x39, 0x89, 0x60,
+	0x84, 0x79, 0x11, 0x3c, 0xee, 0x20, 0xf3, 0x22, 0x6e, 0xbb, 0x4a, 0x69, 0xed, 0x43, 0x8a, 0x5d,
+	0x12, 0x9b, 0x4c, 0xe8, 0xbf, 0xed, 0x5f, 0x20, 0xfd, 0xa1, 0x6d, 0x6d, 0xbd, 0x79, 0x4b, 0xbe,
+	0x49, 0xf3, 0x79, 0xef, 0x7d, 0x0a, 0x63, 0x95, 0x48, 0x23, 0xaf, 0x5f, 0xfd, 0x2d, 0xf1, 0x7c,
+	0xc9, 0x2e, 0x01, 0x1f, 0x15, 0x89, 0x35, 0x69, 0x1d, 0x49, 0xb1, 0xa2, 0xf7, 0x1d, 0x69, 0x83,
+	0x0e, 0xec, 0x19, 0xf9, 0x46, 0xe2, 0xa4, 0x77, 0xde, 0xbb, 0xb0, 0x56, 0xc5, 0x86, 0x3d, 0x81,
+	0xdd, 0xb8, 0xab, 0x95, 0x14, 0x9a, 0xf0, 0x0c, 0x40, 0x17, 0x91, 0x17, 0x85, 0xe5, 0x17, 0x56,
+	0x99, 0x2c, 0x43, 0x9c, 0x81, 0xa5, 0x62, 0x3f, 0xa5, 0x24, 0x3b, 0xed, 0xe7, 0xa7, 0xc3, 0x22,
+	0x58, 0x86, 0x6c, 0x0a, 0xf6, 0x22, 0x96, 0x9a, 0x9a, 0x7c, 0x76, 0x0c, 0x4e, 0x33, 0x2e, 0x50,
+	0x6c, 0x01, 0xb8, 0x48, 0xc8, 0x37, 0xb4, 0xf1, 0x83, 0x98, 0xbe, 0xab, 0x9d, 0x81, 0xb5, 0x13,
+	0x91, 0xf1, 0x4c, 0xaa, 0xa8, 0xe4, 0x0f, 0xb3, 0x60, 0x93, 0x2a, 0xc2, 0x31, 0x0c, 0x02, 0x32,
+	0x39, 0xf8, 0x68, 0x95, 0x2d, 0x99, 0x07, 0x76, 0xe3, 0x91, 0xb2, 0x8d, 0x53, 0x18, 0x9a, 0x2c,
+	0xa8, 0x9a, 0x38, 0xc8, 0xf7, 0x45, 0x0b, 0x15, 0xa0, 0xdf, 0x0d, 0x18, 0x54, 0x80, 0x2b, 0x18,
+	0x3f, 0xc8, 0x48, 0x34, 0x6a, 0xfc, 0xfb, 0x75, 0xf6, 0x0c, 0x93, 0xda, 0xf5, 0xff, 0xae, 0x66,
+	0xfe, 0xd9, 0x83, 0xd1, 0xbd, 0xbf, 0xa5, 0x35, 0x25, 0x1f, 0xd1, 0x0b, 0xe1, 0x2d, 0x8c, 0x6a,
+	0x16, 0xd1, 0xe6, 0x6d, 0xff, 0xae, 0xc3, 0xbb, 0x44, 0xdf, 0xc1, 0x61, 0xdd, 0x0a, 0x3a, 0xbc,
+	0xc3, 0x9d, 0x3b, 0xe5, 0x5d, 0xea, 0x32, 0x6c, 0x6d, 0xea, 0x68, 0xf3, 0xb6, 0x48, 0xd7, 0xe1,
+	0x5d, 0x62, 0xe6, 0x60, 0xfd, 0xcc, 0x07, 0x27, 0xfc, 0xf7, 0x68, 0x5d, 0xe4, 0xad, 0xf1, 0x05,
+	0xfb, 0xf9, 0xdf, 0x7d, 0xf3, 0x15, 0x00, 0x00, 0xff, 0xff, 0xad, 0xed, 0x1f, 0x05, 0xf1, 0x02,
+	0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -210,6 +419,9 @@ const _ = grpc.SupportPackageIsVersion4
 type GameServiceClient interface {
 	OpenSession(ctx context.Context, in *OpenSessionRequest, opts ...grpc.CallOption) (*OpenSessionResponse, error)
 	CloseSession(ctx context.Context, in *CloseSessionRequest, opts ...grpc.CallOption) (*CloseSessionResponse, error)
+	// Table requests
+	CreateTable(ctx context.Context, in *CreateTableRequest, opts ...grpc.CallOption) (*CreateTableResponse, error)
+	JoinTable(ctx context.Context, in *JoinTableRequest, opts ...grpc.CallOption) (*JoinTableResponse, error)
 }
 
 type gameServiceClient struct {
@@ -238,10 +450,31 @@ func (c *gameServiceClient) CloseSession(ctx context.Context, in *CloseSessionRe
 	return out, nil
 }
 
+func (c *gameServiceClient) CreateTable(ctx context.Context, in *CreateTableRequest, opts ...grpc.CallOption) (*CreateTableResponse, error) {
+	out := new(CreateTableResponse)
+	err := c.cc.Invoke(ctx, "/GameService/CreateTable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gameServiceClient) JoinTable(ctx context.Context, in *JoinTableRequest, opts ...grpc.CallOption) (*JoinTableResponse, error) {
+	out := new(JoinTableResponse)
+	err := c.cc.Invoke(ctx, "/GameService/JoinTable", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GameServiceServer is the server API for GameService service.
 type GameServiceServer interface {
 	OpenSession(context.Context, *OpenSessionRequest) (*OpenSessionResponse, error)
 	CloseSession(context.Context, *CloseSessionRequest) (*CloseSessionResponse, error)
+	// Table requests
+	CreateTable(context.Context, *CreateTableRequest) (*CreateTableResponse, error)
+	JoinTable(context.Context, *JoinTableRequest) (*JoinTableResponse, error)
 }
 
 func RegisterGameServiceServer(s *grpc.Server, srv GameServiceServer) {
@@ -284,6 +517,42 @@ func _GameService_CloseSession_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GameService_CreateTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateTableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).CreateTable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/GameService/CreateTable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).CreateTable(ctx, req.(*CreateTableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GameService_JoinTable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JoinTableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GameServiceServer).JoinTable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/GameService/JoinTable",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GameServiceServer).JoinTable(ctx, req.(*JoinTableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _GameService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "GameService",
 	HandlerType: (*GameServiceServer)(nil),
@@ -295,6 +564,14 @@ var _GameService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CloseSession",
 			Handler:    _GameService_CloseSession_Handler,
+		},
+		{
+			MethodName: "CreateTable",
+			Handler:    _GameService_CreateTable_Handler,
+		},
+		{
+			MethodName: "JoinTable",
+			Handler:    _GameService_JoinTable_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

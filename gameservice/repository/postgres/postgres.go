@@ -36,9 +36,16 @@ func New(tracer opentracing.Tracer, logger log.Factory) *pgGameRepository {
 	tables := []basemodel.Model{
 		&model.Player{},
 		&model.Session{},
+		&model.Unit{},
+		&model.Table{},
+		&model.Participant{},
 	}
 
 	if err := basemodel.Sync(DB, tables, false); err != nil {
+		panic(err)
+	}
+
+	if err := (&model.Unit{}).Populate(DB, false); err != nil {
 		panic(err)
 	}
 
@@ -96,5 +103,44 @@ func (r *pgGameRepository) UpdateSessions(ctx context.Context, sessions ...*mode
 		m[i] = s
 	}
 	_, err := r.DB.ModelContext(ctx, m...).WherePK().Update()
+	return err
+}
+
+func (r *pgGameRepository) CreateTable(ctx context.Context, unitType string, bet uint32) (*model.Table, error) {
+	unit := &model.Unit{}
+	err := r.DB.ModelContext(ctx, unit).Where(`unit_type = ?`, unitType).Select()
+	if err != nil {
+		return nil, err
+	}
+
+	table := &model.Table{
+		Bet:    bet,
+		UnitId: unit.Id,
+	}
+	_, err = r.DB.ModelContext(ctx, table).Insert()
+	return table, err
+}
+
+func (r *pgGameRepository) FindTable(ctx context.Context, tableId string) (*model.Table, error) {
+	table := &model.Table{}
+	err := r.DB.ModelContext(ctx, table).Where(`id = ?`, tableId).Select()
+	if err != nil {
+		if err != pg.ErrNoRows {
+			return nil, err
+		}
+
+		// no session has been found
+		return nil, nil
+	}
+
+	return table, nil
+}
+
+func (r *pgGameRepository) CreateParticipants(ctx context.Context, participants ...*model.Participant) error {
+	m := make([]interface{}, len(participants))
+	for i, p := range participants {
+		m[i] = p
+	}
+	_, err := r.DB.ModelContext(ctx, m...).Insert()
 	return err
 }

@@ -10,7 +10,7 @@ replace github.com/Handzo/gogame/gameengine => ../gameengine
 
 require (
 	github.com/Handzo/gogame/authservice v0.0.0-00010101000000-000000000000
-	github.com/Handzo/gogame/common v0.0.0-20200514090337-c88bf53402b4
+	github.com/Handzo/gogame/common v0.0.0-00010101000000-000000000000
 	github.com/Handzo/gogame/gameengine v0.0.0-00010101000000-000000000000
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/go-pg/pg/v9 v9.1.6

@@ -22,6 +22,10 @@ func NewApiService(authsvc authpb.AuthServiceClient, gamesvc gamepb.GameServiceC
 	svc.router.Register("OpenSession", &gamepb.OpenSessionRequest{}, svc.OpenSession)
 	svc.router.Register("CloseSession", &gamepb.CloseSessionRequest{}, svc.CloseSession)
 
+	// table handlers
+	svc.router.Register("CreateTable", &gamepb.CreateTableRequest{}, svc.CreateTable)
+	svc.router.Register("JoinTable", &gamepb.JoinTableRequest{}, svc.JoinTable)
+
 	return svc
 }
 

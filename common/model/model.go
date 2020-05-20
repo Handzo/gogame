@@ -3,14 +3,7 @@ package model
 import (
 	"context"
 	"time"
-
-	"github.com/go-pg/pg/v9"
 )
-
-type Model interface {
-	BeforeUpdate(context.Context) (context.Context, error)
-	Sync(*pg.DB) error
-}
 
 type BaseModel struct {
 	Id        string    `pg:",pk,type:uuid,default:gen_random_uuid()"`
@@ -33,8 +26,4 @@ type BaseModel struct {
 func (m *BaseModel) BeforeUpdate(ctx context.Context) (context.Context, error) {
 	m.UpdatedAt = time.Now()
 	return ctx, nil
-}
-
-func (m *BaseModel) Sync(db *pg.DB) error {
-	return nil
 }

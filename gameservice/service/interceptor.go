@@ -24,6 +24,8 @@ func AuthServerInterceptor(repo repository.GameRepository) grpc.UnaryServerInter
 			return nil, err
 		}
 
+		ctx = context.WithValue(ctx, "player_id", session.PlayerId)
+
 		if session == nil {
 			return nil, code.SessionNotFound
 		}

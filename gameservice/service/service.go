@@ -8,6 +8,7 @@ import (
 	"github.com/Handzo/gogame/common/log"
 	"github.com/Handzo/gogame/common/tracing"
 	enginepb "github.com/Handzo/gogame/gameengine/proto"
+	"github.com/Handzo/gogame/gameservice/code"
 	pb "github.com/Handzo/gogame/gameservice/proto"
 	"github.com/Handzo/gogame/gameservice/repository"
 	"github.com/Handzo/gogame/gameservice/repository/model"
@@ -126,5 +127,77 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 		SessionId: session.Id,
 		PlayerId:  session.PlayerId,
 	})
+	return nil
+}
+
+func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableRequest) (*pb.CreateTableResponse, error) {
+	table, err := g.repo.CreateTable(ctx, req.UnitType, req.Bet)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.CreateTableResponse{
+		TableId: table.Id,
+		Bet:     table.Bet,
+	}, nil
+}
+
+var players map[string]struct{} = make(map[string]struct{})
+
+func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (*pb.JoinTableResponse, error) {
+	table, err := g.repo.FindTable(ctx, req.TableId)
+	if err != nil {
+		return nil, err
+	}
+
+	if table == nil {
+		return nil, code.TableNotFound
+	}
+
+	playerId := ctx.Value("player_id").(string)
+	if len(players) < 4 {
+		if _, ok := players[playerId]; ok {
+			return nil, code.PlayerAlreadyJoined
+		}
+
+		players[playerId] = struct{}{}
+
+		if len(players) == 4 {
+			pps := make([]string, 0, len(players))
+			for k := range players {
+				pps = append(pps, k)
+			}
+			// defer func() {
+
+			if err = g.startTable(ctx, table, pps); err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	g.logger.For(ctx).Info("Player joined", log.String("player_id", playerId))
+
+	return &pb.JoinTableResponse{}, nil
+}
+
+func (g *gameService) startTable(ctx context.Context, table *model.Table, ps []string) error {
+	if len(ps) != 4 {
+		return code.NotEnoughPlayers
+	}
+
+	participants := make([]*model.Participant, len(ps))
+	for o, playerId := range ps {
+		participants[o] = &model.Participant{
+			TableId:      table.Id,
+			PlayerId:     playerId,
+			InitialOrder: o,
+		}
+	}
+
+	err := g.repo.CreateParticipants(ctx, participants...)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
