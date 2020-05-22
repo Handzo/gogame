@@ -8,7 +8,7 @@ import (
 	"github.com/go-redis/redis"
 )
 
-type worker struct {
+type Worker struct {
 	redis               *redis.Client
 	DelayWorkerInterval time.Duration
 	UnackWorkerInterval time.Duration
@@ -20,7 +20,7 @@ type worker struct {
 	taskCh chan *Task
 }
 
-func NewWorker() *worker {
+func NewWorker() *Worker {
 	redis := redis.NewClient(&redis.Options{
 		Addr:     "localhost:6379",
 		Password: "",
@@ -32,7 +32,7 @@ func NewWorker() *worker {
 		panic(err)
 	}
 
-	return &worker{
+	return &Worker{
 		redis:               redis,
 		DelayWorkerInterval: 100 * time.Millisecond,
 		UnackWorkerInterval: 300 * time.Millisecond,
@@ -44,17 +44,17 @@ func NewWorker() *worker {
 	}
 }
 
-func (w *worker) Start() {
+func (w *Worker) Start() {
 	go w.delayWorker()
 	go w.unackWorker()
 	go w.errorWorker()
 }
 
-func (w *worker) Channel() <-chan *Task {
+func (w *Worker) Channel() <-chan *Task {
 	return w.taskCh
 }
 
-func (w *worker) AddTask(task *Task) error {
+func (w *Worker) AddTask(task *Task) error {
 	task.CreateTime = time.Now()
 	data, err := json.Marshal(task)
 	if err != nil {
@@ -72,7 +72,7 @@ func (w *worker) AddTask(task *Task) error {
 	}).Err()
 }
 
-func (w *worker) GetTask(id string) (*Task, error) {
+func (w *Worker) GetTask(id string) (*Task, error) {
 	data, err := w.redis.Get(id).Result()
 	if err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (w *worker) GetTask(id string) (*Task, error) {
 	return &task, json.Unmarshal([]byte(data), &task)
 }
 
-func (w *worker) pool(queue string, from, to time.Time) ([]string, error) {
+func (w *Worker) pool(queue string, from, to time.Time) ([]string, error) {
 	return w.redis.ZRangeByScore(queue, redis.ZRangeBy{
 		Min:    fmt.Sprintf("%d", from.UnixNano()),
 		Max:    fmt.Sprintf("%d", to.UnixNano()),
@@ -90,19 +90,19 @@ func (w *worker) pool(queue string, from, to time.Time) ([]string, error) {
 	}).Result()
 }
 
-func (w *worker) delayToUnack(id string, score int64) (bool, error) {
+func (w *Worker) delayToUnack(id string, score int64) (bool, error) {
 	return w.taskTransfer(DelayQueue, UnackQueue, id, score)
 }
 
-func (w *worker) unackToDelay(id string, score int64) (bool, error) {
+func (w *Worker) unackToDelay(id string, score int64) (bool, error) {
 	return w.taskTransfer(UnackQueue, DelayQueue, id, score)
 }
 
-func (w *worker) errorToDelay(id string, score int64) (bool, error) {
+func (w *Worker) errorToDelay(id string, score int64) (bool, error) {
 	return w.taskTransfer(ErrorQueue, DelayQueue, id, score)
 }
 
-func (w *worker) taskTransfer(from, to, id string, score int64) (bool, error) {
+func (w *Worker) taskTransfer(from, to, id string, score int64) (bool, error) {
 	count, err := w.redis.ZAdd(to, redis.Z{
 		Score:  float64(score),
 		Member: id,
@@ -121,7 +121,7 @@ func (w *worker) taskTransfer(from, to, id string, score int64) (bool, error) {
 	return true, err
 }
 
-func (w *worker) unackToError(id string, score int64) error {
+func (w *Worker) unackToError(id string, score int64) error {
 	err := w.redis.ZAdd(ErrorQueue, redis.Z{
 		Score:  float64(score),
 		Member: id,
@@ -134,7 +134,7 @@ func (w *worker) unackToError(id string, score int64) error {
 	return w.redis.ZRem(UnackQueue, id).Err()
 }
 
-func (w *worker) deleteTask(id string) error {
+func (w *Worker) deleteTask(id string) error {
 	if err := w.redis.Del(id).Err(); err != nil {
 		return err
 	}
@@ -150,7 +150,7 @@ func (w *worker) deleteTask(id string) error {
 	return w.redis.ZRem(ErrorQueue, id).Err()
 }
 
-func (w *worker) delayWorker() {
+func (w *Worker) delayWorker() {
 	fmt.Println("Start delay worker")
 	defer fmt.Println("Stop delay worker")
 
@@ -175,7 +175,7 @@ func (w *worker) delayWorker() {
 	}
 }
 
-func (w *worker) unackWorker() {
+func (w *Worker) unackWorker() {
 	fmt.Println("Start unack worker")
 	defer fmt.Println("Stop unack worker")
 
@@ -198,7 +198,7 @@ func (w *worker) unackWorker() {
 	}
 }
 
-func (w *worker) errorWorker() {
+func (w *Worker) errorWorker() {
 	fmt.Println("Start error worker")
 	defer fmt.Println("Stop error worker")
 
@@ -221,7 +221,7 @@ func (w *worker) errorWorker() {
 	}
 }
 
-func (w *worker) process(id string) {
+func (w *Worker) process(id string) {
 	// get task by id
 	task, err := w.GetTask(id)
 	if err != nil {

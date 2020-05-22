@@ -20,6 +20,7 @@ func (sl spanLogger) Info(msg interface{}, fields ...Field) {
 
 func (sl spanLogger) Error(msg interface{}, fields ...Field) {
 	sl.logToSpan("error", msg, fields...)
+	ext.Error.Set(sl.span, true)
 	sl.logger.WithFields(FieldMap(fields...)).Error(msg)
 }
 

@@ -8,10 +8,13 @@ replace github.com/Handzo/gogame/authservice => ../authservice
 
 replace github.com/Handzo/gogame/gameengine => ../gameengine
 
+replace github.com/Handzo/gogame/rmq => ../rmq
+
 require (
 	github.com/Handzo/gogame/authservice v0.0.0-00010101000000-000000000000
 	github.com/Handzo/gogame/common v0.0.0-00010101000000-000000000000
 	github.com/Handzo/gogame/gameengine v0.0.0-00010101000000-000000000000
+	github.com/Handzo/gogame/rmq v0.0.0-20200520154818-7cbf87205134
 	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/go-pg/pg/v9 v9.1.6
 	github.com/go-redis/redis v6.15.7+incompatible
@@ -24,8 +27,9 @@ require (
 	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/common v0.9.1 // indirect
+	github.com/satori/go.uuid v1.2.1-0.20181028125025-b2ce2384e17b
 	github.com/stretchr/objx v0.2.0 // indirect
-	github.com/stretchr/testify v1.5.0
+	github.com/stretchr/testify v1.5.1
 	github.com/uber/jaeger-lib v2.2.0+incompatible
 	golang.org/x/lint v0.0.0-20200130185559-910be7a94367 // indirect
 	golang.org/x/tools v0.0.0-20200227222343-706bc42d1f0d // indirect

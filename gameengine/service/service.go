@@ -72,6 +72,7 @@ func (e *gameEngine) NewRound(ctx context.Context, req *pb.NewRoundRequest) (*pb
 	sigArray[PLAYER_1] = h2.GetSignature()
 	sigArray[PLAYER_2] = h3.GetSignature()
 	sigArray[PLAYER_3] = h4.GetSignature()
+	sigArray[DEALER] = strconv.Itoa(int(dealer % 4))
 	sigArray[TABLE] = ""
 	sigArray[TEAM_1_ROUND_SCORES] = "0"
 	sigArray[TEAM_2_ROUND_SCORES] = "0"

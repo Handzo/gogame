@@ -7,11 +7,11 @@ import (
 
 type Participant struct {
 	basemodel.BaseModel
-	TableId      string `pg:",notnull,type:uuid"`
-	Table        *Table
-	PlayerId     string `pg:",notnull,type:uuid"`
-	Player       *Player
-	InitialOrder int `pg:",notnull,use_zero"`
+	TableId  string `pg:",notnull,type:uuid"`
+	Table    *Table
+	PlayerId string `pg:",type:uuid"`
+	Player   *Player
+	Order    int `pg:",notnull,use_zero"`
 }
 
 func (Participant) Prepare(*pg.DB, bool) error {

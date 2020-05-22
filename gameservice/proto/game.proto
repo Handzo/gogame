@@ -16,6 +16,29 @@ message OpenSessionRequest {
 message OpenSessionResponse {
     string session_id = 1;
     string player_id = 2;
+    Table table = 3;
+}
+
+message Table {
+    string id = 1;
+    string trump = 2;
+    uint32 turn = 3;
+	string table_cards = 4;
+	uint32 club_player = 5;
+	uint32 dealer = 6;
+    uint32 team_1_score = 7;
+	uint32 team_2_score = 8;
+	uint32 team_1_total = 9;
+	uint32 team_2_total = 10;
+	repeated Player players = 11;
+}
+
+message Player {
+    string id = 1;
+    string name = 2;
+    uint32 order = 3;
+    string cards = 4;
+    uint32 cards_count = 5;
 }
 
 message CloseSessionRequest {}
@@ -41,4 +64,17 @@ message JoinTableResponse {
     string table_id = 1;
     string unit_type = 2;
     uint32 bet = 3;
+    repeated Participant participants = 4;
 }
+
+message Participant {
+    string id = 1;
+    uint32 order = 2;
+    string name = 3;
+    Player player = 4;
+}
+
+// message Player {
+//     string player_id = 1;
+//     string name = 2;
+// }

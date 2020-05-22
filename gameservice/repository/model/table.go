@@ -9,14 +9,15 @@ import (
 
 type Table struct {
 	basemodel.BaseModel
-	StartTime time.Time
-	EndTime   time.Time
-
-	// units participants plays for should be fk to units
-	UnitId string `pg:",notnull,type:uuid"`
-	Unit   *Unit
-	Bet    uint32 `pg:",default:0"`
-	Result string
+	StartTime    time.Time
+	EndTime      time.Time
+	Signature    string
+	UnitId       string `pg:",notnull,type:uuid"`
+	Unit         *Unit
+	Bet          uint32 `pg:",default:0"`
+	Result       string
+	Participants []*Participant
+	Rounds       []*Round
 }
 
 func (Table) Prepare(*pg.DB, bool) error {

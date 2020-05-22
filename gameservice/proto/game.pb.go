@@ -64,6 +64,7 @@ func (m *OpenSessionRequest) GetToken() string {
 type OpenSessionResponse struct {
 	SessionId            string   `protobuf:"bytes,1,opt,name=session_id,json=sessionId,proto3" json:"session_id,omitempty"`
 	PlayerId             string   `protobuf:"bytes,2,opt,name=player_id,json=playerId,proto3" json:"player_id,omitempty"`
+	Table                *Table   `protobuf:"bytes,3,opt,name=table,proto3" json:"table,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -108,6 +109,203 @@ func (m *OpenSessionResponse) GetPlayerId() string {
 	return ""
 }
 
+func (m *OpenSessionResponse) GetTable() *Table {
+	if m != nil {
+		return m.Table
+	}
+	return nil
+}
+
+type Table struct {
+	Id                   string    `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Trump                string    `protobuf:"bytes,2,opt,name=trump,proto3" json:"trump,omitempty"`
+	Turn                 uint32    `protobuf:"varint,3,opt,name=turn,proto3" json:"turn,omitempty"`
+	TableCards           string    `protobuf:"bytes,4,opt,name=table_cards,json=tableCards,proto3" json:"table_cards,omitempty"`
+	ClubPlayer           uint32    `protobuf:"varint,5,opt,name=club_player,json=clubPlayer,proto3" json:"club_player,omitempty"`
+	Dealer               uint32    `protobuf:"varint,6,opt,name=dealer,proto3" json:"dealer,omitempty"`
+	Team_1Score          uint32    `protobuf:"varint,7,opt,name=team_1_score,json=team1Score,proto3" json:"team_1_score,omitempty"`
+	Team_2Score          uint32    `protobuf:"varint,8,opt,name=team_2_score,json=team2Score,proto3" json:"team_2_score,omitempty"`
+	Team_1Total          uint32    `protobuf:"varint,9,opt,name=team_1_total,json=team1Total,proto3" json:"team_1_total,omitempty"`
+	Team_2Total          uint32    `protobuf:"varint,10,opt,name=team_2_total,json=team2Total,proto3" json:"team_2_total,omitempty"`
+	Players              []*Player `protobuf:"bytes,11,rep,name=players,proto3" json:"players,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}  `json:"-"`
+	XXX_unrecognized     []byte    `json:"-"`
+	XXX_sizecache        int32     `json:"-"`
+}
+
+func (m *Table) Reset()         { *m = Table{} }
+func (m *Table) String() string { return proto.CompactTextString(m) }
+func (*Table) ProtoMessage()    {}
+func (*Table) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{2}
+}
+
+func (m *Table) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Table.Unmarshal(m, b)
+}
+func (m *Table) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Table.Marshal(b, m, deterministic)
+}
+func (m *Table) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Table.Merge(m, src)
+}
+func (m *Table) XXX_Size() int {
+	return xxx_messageInfo_Table.Size(m)
+}
+func (m *Table) XXX_DiscardUnknown() {
+	xxx_messageInfo_Table.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Table proto.InternalMessageInfo
+
+func (m *Table) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Table) GetTrump() string {
+	if m != nil {
+		return m.Trump
+	}
+	return ""
+}
+
+func (m *Table) GetTurn() uint32 {
+	if m != nil {
+		return m.Turn
+	}
+	return 0
+}
+
+func (m *Table) GetTableCards() string {
+	if m != nil {
+		return m.TableCards
+	}
+	return ""
+}
+
+func (m *Table) GetClubPlayer() uint32 {
+	if m != nil {
+		return m.ClubPlayer
+	}
+	return 0
+}
+
+func (m *Table) GetDealer() uint32 {
+	if m != nil {
+		return m.Dealer
+	}
+	return 0
+}
+
+func (m *Table) GetTeam_1Score() uint32 {
+	if m != nil {
+		return m.Team_1Score
+	}
+	return 0
+}
+
+func (m *Table) GetTeam_2Score() uint32 {
+	if m != nil {
+		return m.Team_2Score
+	}
+	return 0
+}
+
+func (m *Table) GetTeam_1Total() uint32 {
+	if m != nil {
+		return m.Team_1Total
+	}
+	return 0
+}
+
+func (m *Table) GetTeam_2Total() uint32 {
+	if m != nil {
+		return m.Team_2Total
+	}
+	return 0
+}
+
+func (m *Table) GetPlayers() []*Player {
+	if m != nil {
+		return m.Players
+	}
+	return nil
+}
+
+type Player struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	Order                uint32   `protobuf:"varint,3,opt,name=order,proto3" json:"order,omitempty"`
+	Cards                string   `protobuf:"bytes,4,opt,name=cards,proto3" json:"cards,omitempty"`
+	CardsCount           uint32   `protobuf:"varint,5,opt,name=cards_count,json=cardsCount,proto3" json:"cards_count,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Player) Reset()         { *m = Player{} }
+func (m *Player) String() string { return proto.CompactTextString(m) }
+func (*Player) ProtoMessage()    {}
+func (*Player) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{3}
+}
+
+func (m *Player) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Player.Unmarshal(m, b)
+}
+func (m *Player) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Player.Marshal(b, m, deterministic)
+}
+func (m *Player) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Player.Merge(m, src)
+}
+func (m *Player) XXX_Size() int {
+	return xxx_messageInfo_Player.Size(m)
+}
+func (m *Player) XXX_DiscardUnknown() {
+	xxx_messageInfo_Player.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Player proto.InternalMessageInfo
+
+func (m *Player) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Player) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Player) GetOrder() uint32 {
+	if m != nil {
+		return m.Order
+	}
+	return 0
+}
+
+func (m *Player) GetCards() string {
+	if m != nil {
+		return m.Cards
+	}
+	return ""
+}
+
+func (m *Player) GetCardsCount() uint32 {
+	if m != nil {
+		return m.CardsCount
+	}
+	return 0
+}
+
 type CloseSessionRequest struct {
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -118,7 +316,7 @@ func (m *CloseSessionRequest) Reset()         { *m = CloseSessionRequest{} }
 func (m *CloseSessionRequest) String() string { return proto.CompactTextString(m) }
 func (*CloseSessionRequest) ProtoMessage()    {}
 func (*CloseSessionRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{2}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{4}
 }
 
 func (m *CloseSessionRequest) XXX_Unmarshal(b []byte) error {
@@ -149,7 +347,7 @@ func (m *CloseSessionResponse) Reset()         { *m = CloseSessionResponse{} }
 func (m *CloseSessionResponse) String() string { return proto.CompactTextString(m) }
 func (*CloseSessionResponse) ProtoMessage()    {}
 func (*CloseSessionResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{3}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{5}
 }
 
 func (m *CloseSessionResponse) XXX_Unmarshal(b []byte) error {
@@ -183,7 +381,7 @@ func (m *CreateTableRequest) Reset()         { *m = CreateTableRequest{} }
 func (m *CreateTableRequest) String() string { return proto.CompactTextString(m) }
 func (*CreateTableRequest) ProtoMessage()    {}
 func (*CreateTableRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{4}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{6}
 }
 
 func (m *CreateTableRequest) XXX_Unmarshal(b []byte) error {
@@ -231,7 +429,7 @@ func (m *CreateTableResponse) Reset()         { *m = CreateTableResponse{} }
 func (m *CreateTableResponse) String() string { return proto.CompactTextString(m) }
 func (*CreateTableResponse) ProtoMessage()    {}
 func (*CreateTableResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{5}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{7}
 }
 
 func (m *CreateTableResponse) XXX_Unmarshal(b []byte) error {
@@ -284,7 +482,7 @@ func (m *JoinTableRequest) Reset()         { *m = JoinTableRequest{} }
 func (m *JoinTableRequest) String() string { return proto.CompactTextString(m) }
 func (*JoinTableRequest) ProtoMessage()    {}
 func (*JoinTableRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{6}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{8}
 }
 
 func (m *JoinTableRequest) XXX_Unmarshal(b []byte) error {
@@ -313,19 +511,20 @@ func (m *JoinTableRequest) GetTableId() string {
 }
 
 type JoinTableResponse struct {
-	TableId              string   `protobuf:"bytes,1,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
-	UnitType             string   `protobuf:"bytes,2,opt,name=unit_type,json=unitType,proto3" json:"unit_type,omitempty"`
-	Bet                  uint32   `protobuf:"varint,3,opt,name=bet,proto3" json:"bet,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
+	TableId              string         `protobuf:"bytes,1,opt,name=table_id,json=tableId,proto3" json:"table_id,omitempty"`
+	UnitType             string         `protobuf:"bytes,2,opt,name=unit_type,json=unitType,proto3" json:"unit_type,omitempty"`
+	Bet                  uint32         `protobuf:"varint,3,opt,name=bet,proto3" json:"bet,omitempty"`
+	Participants         []*Participant `protobuf:"bytes,4,rep,name=participants,proto3" json:"participants,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
+	XXX_unrecognized     []byte         `json:"-"`
+	XXX_sizecache        int32          `json:"-"`
 }
 
 func (m *JoinTableResponse) Reset()         { *m = JoinTableResponse{} }
 func (m *JoinTableResponse) String() string { return proto.CompactTextString(m) }
 func (*JoinTableResponse) ProtoMessage()    {}
 func (*JoinTableResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_5309ac3f9cbe5f84, []int{7}
+	return fileDescriptor_5309ac3f9cbe5f84, []int{9}
 }
 
 func (m *JoinTableResponse) XXX_Unmarshal(b []byte) error {
@@ -367,42 +566,131 @@ func (m *JoinTableResponse) GetBet() uint32 {
 	return 0
 }
 
+func (m *JoinTableResponse) GetParticipants() []*Participant {
+	if m != nil {
+		return m.Participants
+	}
+	return nil
+}
+
+type Participant struct {
+	Id                   string   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Order                uint32   `protobuf:"varint,2,opt,name=order,proto3" json:"order,omitempty"`
+	Name                 string   `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Player               *Player  `protobuf:"bytes,4,opt,name=player,proto3" json:"player,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *Participant) Reset()         { *m = Participant{} }
+func (m *Participant) String() string { return proto.CompactTextString(m) }
+func (*Participant) ProtoMessage()    {}
+func (*Participant) Descriptor() ([]byte, []int) {
+	return fileDescriptor_5309ac3f9cbe5f84, []int{10}
+}
+
+func (m *Participant) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_Participant.Unmarshal(m, b)
+}
+func (m *Participant) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_Participant.Marshal(b, m, deterministic)
+}
+func (m *Participant) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Participant.Merge(m, src)
+}
+func (m *Participant) XXX_Size() int {
+	return xxx_messageInfo_Participant.Size(m)
+}
+func (m *Participant) XXX_DiscardUnknown() {
+	xxx_messageInfo_Participant.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_Participant proto.InternalMessageInfo
+
+func (m *Participant) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *Participant) GetOrder() uint32 {
+	if m != nil {
+		return m.Order
+	}
+	return 0
+}
+
+func (m *Participant) GetName() string {
+	if m != nil {
+		return m.Name
+	}
+	return ""
+}
+
+func (m *Participant) GetPlayer() *Player {
+	if m != nil {
+		return m.Player
+	}
+	return nil
+}
+
 func init() {
 	proto.RegisterType((*OpenSessionRequest)(nil), "OpenSessionRequest")
 	proto.RegisterType((*OpenSessionResponse)(nil), "OpenSessionResponse")
+	proto.RegisterType((*Table)(nil), "Table")
+	proto.RegisterType((*Player)(nil), "Player")
 	proto.RegisterType((*CloseSessionRequest)(nil), "CloseSessionRequest")
 	proto.RegisterType((*CloseSessionResponse)(nil), "CloseSessionResponse")
 	proto.RegisterType((*CreateTableRequest)(nil), "CreateTableRequest")
 	proto.RegisterType((*CreateTableResponse)(nil), "CreateTableResponse")
 	proto.RegisterType((*JoinTableRequest)(nil), "JoinTableRequest")
 	proto.RegisterType((*JoinTableResponse)(nil), "JoinTableResponse")
+	proto.RegisterType((*Participant)(nil), "Participant")
 }
 
 func init() { proto.RegisterFile("proto/game.proto", fileDescriptor_5309ac3f9cbe5f84) }
 
 var fileDescriptor_5309ac3f9cbe5f84 = []byte{
-	// 322 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x92, 0xcf, 0x4b, 0xc3, 0x30,
-	0x14, 0xc7, 0xd9, 0x86, 0xba, 0xbe, 0x29, 0x6c, 0xaf, 0x9d, 0x68, 0x87, 0x20, 0x39, 0x89, 0x60,
-	0x84, 0x79, 0x11, 0x3c, 0xee, 0x20, 0xf3, 0x22, 0x6e, 0xbb, 0x4a, 0x69, 0xed, 0x43, 0x8a, 0x5d,
-	0x12, 0x9b, 0x4c, 0xe8, 0xbf, 0xed, 0x5f, 0x20, 0xfd, 0xa1, 0x6d, 0x6d, 0xbd, 0x79, 0x4b, 0xbe,
-	0x49, 0xf3, 0x79, 0xef, 0x7d, 0x0a, 0x63, 0x95, 0x48, 0x23, 0xaf, 0x5f, 0xfd, 0x2d, 0xf1, 0x7c,
-	0xc9, 0x2e, 0x01, 0x1f, 0x15, 0x89, 0x35, 0x69, 0x1d, 0x49, 0xb1, 0xa2, 0xf7, 0x1d, 0x69, 0x83,
-	0x0e, 0xec, 0x19, 0xf9, 0x46, 0xe2, 0xa4, 0x77, 0xde, 0xbb, 0xb0, 0x56, 0xc5, 0x86, 0x3d, 0x81,
-	0xdd, 0xb8, 0xab, 0x95, 0x14, 0x9a, 0xf0, 0x0c, 0x40, 0x17, 0x91, 0x17, 0x85, 0xe5, 0x17, 0x56,
-	0x99, 0x2c, 0x43, 0x9c, 0x81, 0xa5, 0x62, 0x3f, 0xa5, 0x24, 0x3b, 0xed, 0xe7, 0xa7, 0xc3, 0x22,
-	0x58, 0x86, 0x6c, 0x0a, 0xf6, 0x22, 0x96, 0x9a, 0x9a, 0x7c, 0x76, 0x0c, 0x4e, 0x33, 0x2e, 0x50,
-	0x6c, 0x01, 0xb8, 0x48, 0xc8, 0x37, 0xb4, 0xf1, 0x83, 0x98, 0xbe, 0xab, 0x9d, 0x81, 0xb5, 0x13,
-	0x91, 0xf1, 0x4c, 0xaa, 0xa8, 0xe4, 0x0f, 0xb3, 0x60, 0x93, 0x2a, 0xc2, 0x31, 0x0c, 0x02, 0x32,
-	0x39, 0xf8, 0x68, 0x95, 0x2d, 0x99, 0x07, 0x76, 0xe3, 0x91, 0xb2, 0x8d, 0x53, 0x18, 0x9a, 0x2c,
-	0xa8, 0x9a, 0x38, 0xc8, 0xf7, 0x45, 0x0b, 0x15, 0xa0, 0xdf, 0x0d, 0x18, 0x54, 0x80, 0x2b, 0x18,
-	0x3f, 0xc8, 0x48, 0x34, 0x6a, 0xfc, 0xfb, 0x75, 0xf6, 0x0c, 0x93, 0xda, 0xf5, 0xff, 0xae, 0x66,
-	0xfe, 0xd9, 0x83, 0xd1, 0xbd, 0xbf, 0xa5, 0x35, 0x25, 0x1f, 0xd1, 0x0b, 0xe1, 0x2d, 0x8c, 0x6a,
-	0x16, 0xd1, 0xe6, 0x6d, 0xff, 0xae, 0xc3, 0xbb, 0x44, 0xdf, 0xc1, 0x61, 0xdd, 0x0a, 0x3a, 0xbc,
-	0xc3, 0x9d, 0x3b, 0xe5, 0x5d, 0xea, 0x32, 0x6c, 0x6d, 0xea, 0x68, 0xf3, 0xb6, 0x48, 0xd7, 0xe1,
-	0x5d, 0x62, 0xe6, 0x60, 0xfd, 0xcc, 0x07, 0x27, 0xfc, 0xf7, 0x68, 0x5d, 0xe4, 0xad, 0xf1, 0x05,
-	0xfb, 0xf9, 0xdf, 0x7d, 0xf3, 0x15, 0x00, 0x00, 0xff, 0xff, 0xad, 0xed, 0x1f, 0x05, 0xf1, 0x02,
-	0x00, 0x00,
+	// 587 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0xcd, 0x6e, 0xd3, 0x40,
+	0x10, 0xc7, 0x95, 0x2f, 0x27, 0x1e, 0xa7, 0xa8, 0xdd, 0xa4, 0x95, 0x49, 0x41, 0x0d, 0x3e, 0x55,
+	0x48, 0x2c, 0xd4, 0x5c, 0x90, 0x38, 0xe6, 0x80, 0xca, 0x85, 0xca, 0xed, 0xdd, 0xda, 0xd8, 0x23,
+	0xb0, 0x70, 0xbc, 0x66, 0xbd, 0x46, 0xca, 0x53, 0xf0, 0x56, 0x3c, 0x10, 0x4f, 0x80, 0xf6, 0xa3,
+	0x8e, 0xdd, 0x98, 0x1b, 0xb7, 0x99, 0xdf, 0xfe, 0x3d, 0x3b, 0x9e, 0xfd, 0xef, 0xc2, 0x69, 0x29,
+	0xb8, 0xe4, 0x6f, 0xbf, 0xb2, 0x1d, 0x52, 0x1d, 0x06, 0xaf, 0x81, 0x7c, 0x29, 0xb1, 0xb8, 0xc7,
+	0xaa, 0xca, 0x78, 0x11, 0xe1, 0x8f, 0x1a, 0x2b, 0x49, 0x96, 0x30, 0x91, 0xfc, 0x3b, 0x16, 0xfe,
+	0x60, 0x3d, 0xb8, 0x76, 0x23, 0x93, 0x04, 0x1c, 0x16, 0x1d, 0x6d, 0x55, 0xf2, 0xa2, 0x42, 0xf2,
+	0x12, 0xa0, 0x32, 0x28, 0xce, 0x52, 0xfb, 0x85, 0x6b, 0xc9, 0x6d, 0x4a, 0x2e, 0xc1, 0x2d, 0x73,
+	0xb6, 0x47, 0xa1, 0x56, 0x87, 0x7a, 0x75, 0x66, 0xc0, 0x6d, 0x4a, 0x5e, 0xc0, 0x44, 0xb2, 0x6d,
+	0x8e, 0xfe, 0x68, 0x3d, 0xb8, 0xf6, 0x42, 0x87, 0x3e, 0xa8, 0x2c, 0x32, 0x30, 0xf8, 0x3d, 0x84,
+	0x89, 0x06, 0xe4, 0x19, 0x0c, 0x9b, 0xda, 0xc3, 0x2c, 0xd5, 0x0d, 0x8a, 0x7a, 0x57, 0xda, 0x82,
+	0x26, 0x21, 0x04, 0xc6, 0xb2, 0x16, 0x85, 0x2e, 0x76, 0x12, 0xe9, 0x98, 0x5c, 0x81, 0xa7, 0x8b,
+	0xc5, 0x09, 0x13, 0x69, 0xe5, 0x8f, 0xb5, 0x1e, 0x34, 0xda, 0x28, 0xa2, 0x04, 0x49, 0x5e, 0x6f,
+	0x63, 0xd3, 0x93, 0x3f, 0xd1, 0xdf, 0x82, 0x42, 0x77, 0x9a, 0x90, 0x0b, 0x70, 0x52, 0x64, 0x39,
+	0x0a, 0xdf, 0xd1, 0x6b, 0x36, 0x23, 0x6b, 0x98, 0x4b, 0x64, 0xbb, 0xf8, 0x26, 0xae, 0x12, 0x2e,
+	0xd0, 0x9f, 0x9a, 0x2f, 0x15, 0xbb, 0xb9, 0x57, 0xa4, 0x51, 0x84, 0x56, 0x31, 0x3b, 0x28, 0xc2,
+	0xae, 0xe2, 0x26, 0x96, 0x5c, 0xb2, 0xdc, 0x77, 0x5b, 0x35, 0x1e, 0x14, 0x69, 0xd5, 0x30, 0x0a,
+	0x68, 0xd5, 0x30, 0x8a, 0x57, 0x30, 0x35, 0xbd, 0x57, 0xbe, 0xb7, 0x1e, 0x5d, 0x7b, 0xe1, 0x94,
+	0x9a, 0xce, 0xa3, 0x47, 0x1e, 0xec, 0xc1, 0xb1, 0x3f, 0xf3, 0x74, 0x90, 0x04, 0xc6, 0x05, 0xdb,
+	0xa1, 0x9d, 0xa3, 0x8e, 0xd5, 0x70, 0xb9, 0x48, 0x51, 0xd8, 0x39, 0x9a, 0x44, 0xd1, 0xf6, 0x08,
+	0x4d, 0xa2, 0xa7, 0xa7, 0x82, 0x38, 0xe1, 0x75, 0x21, 0x9b, 0xe9, 0x29, 0xb4, 0x51, 0x24, 0x38,
+	0x87, 0xc5, 0x26, 0xe7, 0x15, 0x76, 0x1d, 0x16, 0x5c, 0xc0, 0xb2, 0x8b, 0x8d, 0x99, 0x82, 0x0d,
+	0x90, 0x8d, 0x40, 0x26, 0xd1, 0x18, 0xc1, 0xfa, 0xf1, 0x12, 0xdc, 0xba, 0xc8, 0x64, 0x2c, 0xf7,
+	0x25, 0xda, 0xe6, 0x67, 0x0a, 0x3c, 0xec, 0x4b, 0x24, 0xa7, 0x30, 0xda, 0xa2, 0xd4, 0x7f, 0x70,
+	0x12, 0xa9, 0x30, 0x88, 0x61, 0xd1, 0x29, 0x62, 0x8d, 0xfa, 0x1c, 0x66, 0xc6, 0x0a, 0xcd, 0x04,
+	0xa6, 0x3a, 0x37, 0x26, 0x3d, 0x6c, 0x30, 0xec, 0xdf, 0x60, 0x74, 0xd8, 0xe0, 0x0d, 0x9c, 0x7e,
+	0xe6, 0x59, 0xd1, 0xe9, 0xf1, 0xdf, 0xd5, 0x83, 0x5f, 0x03, 0x38, 0x6b, 0xe9, 0xff, 0x77, 0x3b,
+	0xe4, 0x1d, 0xcc, 0x4b, 0x26, 0x64, 0x96, 0x64, 0x25, 0x2b, 0xa4, 0x3a, 0x21, 0x65, 0x83, 0x39,
+	0xbd, 0x3b, 0xc0, 0xa8, 0xa3, 0x08, 0xbe, 0x81, 0xd7, 0x5a, 0xec, 0xbb, 0x5e, 0xc6, 0x01, 0xc3,
+	0xb6, 0x03, 0x1e, 0xbd, 0x32, 0x6a, 0x79, 0xe5, 0x0a, 0x1c, 0x7b, 0x71, 0xc6, 0xfa, 0x06, 0x37,
+	0xde, 0xb3, 0x38, 0xfc, 0x33, 0x00, 0xef, 0x13, 0xdb, 0xe1, 0x3d, 0x8a, 0x9f, 0x59, 0x82, 0xe4,
+	0x03, 0x78, 0xad, 0x47, 0x84, 0x2c, 0xe8, 0xf1, 0xf3, 0xb3, 0x5a, 0xd2, 0xbe, 0x77, 0xe6, 0x23,
+	0xcc, 0xdb, 0x96, 0x21, 0x4b, 0xda, 0x63, 0xac, 0xd5, 0x39, 0xed, 0xf3, 0x95, 0xda, 0xb6, 0x65,
+	0x09, 0xb2, 0xa0, 0xc7, 0x2e, 0x5b, 0x2d, 0x69, 0x9f, 0x6b, 0x42, 0x70, 0x9b, 0xb3, 0x23, 0x67,
+	0xf4, 0xe9, 0xb9, 0xaf, 0x08, 0x3d, 0x3a, 0xda, 0xad, 0xa3, 0x1f, 0xd7, 0xf7, 0x7f, 0x03, 0x00,
+	0x00, 0xff, 0xff, 0x54, 0xc0, 0xae, 0x5a, 0x70, 0x05, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.

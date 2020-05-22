@@ -24,7 +24,7 @@ var (
 )
 
 func main() {
-	logger := log.NewFactory(log.NewEntry()).With(log.String("service", "auth"))
+	logger := log.NewFactory(log.NewEntry()).With(log.String("service", "game"))
 	metricsFactory := jprom.New().Namespace(metrics.NSOptions{Name: "gogame", Tags: nil})
 	tracer := tracing.New("gameservice", metricsFactory, logger)
 
@@ -51,13 +51,13 @@ func main() {
 	// game engine
 	var enginesvc enginepb.GameEngineClient
 	{
-		portStr := net.JoinHostPort("localhost", fmt.Sprintf("%d", *authport))
+		portStr := net.JoinHostPort("localhost", fmt.Sprintf("%d", *engineport))
 		conn, err := grpc.Dial(portStr, opts...)
 		if err != nil {
 			logger.Bg().Fatal(err)
 		}
 		defer conn.Close()
-		authsvc = authpb.NewAuthServiceClient(conn)
+		enginesvc = enginepb.NewGameEngineClient(conn)
 	}
 
 	host := net.JoinHostPort("localhost", fmt.Sprintf("%d", *port))

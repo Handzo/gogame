@@ -45,11 +45,9 @@ func PropagateMetadataClientInterceptor() grpc.UnaryClientInterceptor {
 		opts ...grpc.CallOption,
 	) error {
 		md, ok := metadata.FromIncomingContext(ctx)
-		if !ok {
-			return InvalidArgument
+		if ok {
+			ctx = metadata.NewOutgoingContext(ctx, md)
 		}
-
-		ctx = metadata.NewOutgoingContext(ctx, md)
 
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
