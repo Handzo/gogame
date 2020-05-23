@@ -23,12 +23,12 @@ const (
 
 type option struct {
 	ExecuteTime time.Time
-	Topic       string
+	Payload     string
 }
 
 type TaskOption func(*option)
 
-func NewTask(callback, payload string, opts ...TaskOption) *Task {
+func NewTask(callback, topic string, opts ...TaskOption) *Task {
 	defaultOpt := &option{
 		ExecuteTime: time.Now(),
 	}
@@ -40,9 +40,9 @@ func NewTask(callback, payload string, opts ...TaskOption) *Task {
 	id := uuid.Must(uuid.NewV4())
 	return &Task{
 		Id:          id.String(),
-		Topic:       defaultOpt.Topic,
+		Topic:       topic,
 		Callback:    callback,
-		Payload:     payload,
+		Payload:     defaultOpt.Payload,
 		ExecuteTime: defaultOpt.ExecuteTime,
 		CreateTime:  time.Now(),
 	}
@@ -60,8 +60,8 @@ func WithDelay(d time.Duration) TaskOption {
 	}
 }
 
-func WithTopic(topic string) TaskOption {
+func WithPayload(payload string) TaskOption {
 	return func(o *option) {
-		o.Topic = topic
+		o.Payload = payload
 	}
 }

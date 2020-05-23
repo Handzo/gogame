@@ -7,6 +7,7 @@ service GameService {
     // Table requests
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
     rpc JoinTable(JoinTableRequest) returns (JoinTableResponse);
+    rpc MakeMove(MakeMoveRequest) returns (MakeMoveResponse);
 }
 
 message OpenSessionRequest {
@@ -74,7 +75,9 @@ message Participant {
     Player player = 4;
 }
 
-// message Player {
-//     string player_id = 1;
-//     string name = 2;
-// }
+message MakeMoveRequest {
+    string table_id = 1;
+    string card = 2;
+}
+
+message MakeMoveResponse{}

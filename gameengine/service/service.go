@@ -48,7 +48,18 @@ func (e *gameEngine) StartNewGame(ctx context.Context, req *pb.StartNewGameReque
 }
 
 func (e *gameEngine) NewRound(ctx context.Context, req *pb.NewRoundRequest) (*pb.NewRoundResponse, error) {
-	sigArray := strings.Split(req.Signature, ":")
+	var sigArray []string
+
+	if req.Signature == "" {
+		sigArray = make([]string, SIG_LENGTH)
+		sigArray[TRUMP] = "0"
+		sigArray[CPLAYER] = ""
+		sigArray[DEALER] = "2"
+		sigArray[TEAM_1_TOTAL] = "0"
+		sigArray[TEAM_2_TOTAL] = "0"
+	} else {
+		sigArray = strings.Split(req.Signature, ":")
+	}
 
 	// define dealer
 	dealer, err := strconv.Atoi(sigArray[DEALER])

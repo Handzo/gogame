@@ -79,7 +79,7 @@ func (s *proxyServer) handleFunc(w http.ResponseWriter, r *http.Request) {
 			if !ok {
 				break
 			}
-			response(socket, msg.Payload)
+			socket.WriteMessage([]byte(msg.Payload))
 		}
 	}()
 
@@ -104,23 +104,22 @@ func (s *proxyServer) listen(ctx context.Context, wsocket *socket) error {
 		return err
 	}
 
-	span, ctx, logger := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
-	span.SetTag("remote", ctx.Value("remote"))
-	defer span.Finish()
-
-	logger.Info(string(reqData))
-
 	req := &apipb.Request{}
 	err = jsonpb.Unmarshal(bytes.NewReader(reqData), req)
 	if err != nil {
 		if r, err := responseWithError(wsocket, req, status.Error(3, "bad request")); err != nil {
 			return err
 		} else {
-			logger.Warn(string(r))
+			s.logger.Bg().Warn(string(r))
 		}
 		return nil
 	}
 
+	span, ctx, logger := s.logger.StartForWithTracer(ctx, s.tracer, req.Type)
+	span.SetTag("remote", ctx.Value("remote"))
+	defer span.Finish()
+
+	logger.Info(string(reqData))
 	logger.Info(req)
 
 	res, err := s.api.Send(opentracing.ContextWithSpan(ctx, span), req)
@@ -145,7 +144,7 @@ func (s *proxyServer) listen(ctx context.Context, wsocket *socket) error {
 }
 
 func (s *proxyServer) connect(ctx context.Context) error {
-	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
+	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "Connect")
 	span.SetTag("remote", ctx.Value("remote"))
 	defer span.Finish()
 
@@ -156,7 +155,7 @@ func (s *proxyServer) connect(ctx context.Context) error {
 }
 
 func (s *proxyServer) disconnect(ctx context.Context) error {
-	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "proxy")
+	span, ctx, _ := s.logger.StartForWithTracer(ctx, s.tracer, "Disconnect")
 	span.SetTag("remote", ctx.Value("remote"))
 	defer span.Finish()
 

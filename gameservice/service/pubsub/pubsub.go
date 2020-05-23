@@ -34,32 +34,31 @@ func (p *PubSub) Unbind(ctx context.Context, remote string) {
 }
 
 func (p *PubSub) Publish(ctx context.Context, channel string, msg interface{}) {
-	ctx, span := p.startSpan(ctx, channel)
+	ctx, span := p.startSpan(ctx, "Publish/"+channel)
 	if span != nil {
 		defer span.Finish()
 	}
 
 	logger := p.logger.For(ctx).With(log.String("channel", channel))
-	logger.Info(msg)
 
 	data, err := json.Marshal(msg)
 
-	cmd := p.redis.Publish(channel, string(data))
+	cmd := p.redis.Publish(channel, data)
 
 	val, err := cmd.Result()
 
-	logger.Info(cmd, log.Int64("param.received", val), log.Error(err))
+	logger.Info(cmd.Name(), log.Int64("param.received", val), log.Error(err))
 }
 
 func (p *PubSub) Room(id string) *room {
-	return &room{id, p.redis, p.logger}
+	return &room{id, p.redis, p.logger, p}
 }
 
 func (p *PubSub) ToPlayer(ctx context.Context, id string, msg interface{}) {
 	remote, err := p.redis.Get(id).Result()
 	if err != nil || remote == "" {
 		// no such user connected to pubsub
-		fmt.Println(err)
+		return
 	}
 
 	p.Publish(ctx, remote, msg)

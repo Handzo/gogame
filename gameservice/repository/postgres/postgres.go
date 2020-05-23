@@ -93,6 +93,11 @@ func (r *pgGameRepository) Select(ctx context.Context, model interface{}, column
 		Select()
 }
 
+func (r *pgGameRepository) Insert(ctx context.Context, model interface{}) error {
+	_, err := r.DB.ModelContext(ctx, model).Insert()
+	return err
+}
+
 func (r *pgGameRepository) CreateSession(ctx context.Context, session *model.Session) error {
 	_, err := r.DB.ModelContext(ctx, session).Insert()
 	return err
@@ -237,6 +242,58 @@ func (r *pgGameRepository) Update(ctx context.Context, model interface{}, column
 
 	_, err := query.Update()
 	return err
+}
+
+func (r *pgGameRepository) FindCurrentRoundForTable(ctx context.Context, tableId string) (*model.Round, error) {
+	round := &model.Round{}
+	return round, r.DB.ModelContext(ctx, round).
+		Column(`id`, `start_time`, `end_time`, `signature`, `table_id`).
+		Where(`table_id = ?`, tableId).
+		Where(`start_time IS NOT NULL`).
+		Where(`end_time IS NULL`).
+		Order(`created_at DESC`).
+		First()
+}
+
+func (r *pgGameRepository) FindCurrentDealForTable(ctx context.Context, tableId string) (*model.Deal, error) {
+	round, err := r.FindCurrentRoundForTable(ctx, tableId)
+	if err != nil {
+		return nil, err
+	}
+
+	deal := &model.Deal{}
+	return deal, r.DB.ModelContext(ctx, deal).
+		Column(`id`, `start_time`, `end_time`, `signature`, `round_id`).
+		Where(`round_id = ?`, round.Id).
+		Where(`start_time IS NOT NULL`).
+		Where(`end_time IS NULL`).
+		Order(`created_at DESC`).
+		First()
+}
+
+func (r *pgGameRepository) FindCurrentDealOrderForTable(ctx context.Context, tableId string) (*model.DealOrder, error) {
+	deal, err := r.FindCurrentDealForTable(ctx, tableId)
+	if err != nil {
+		return nil, err
+	}
+
+	dealOrder := &model.DealOrder{}
+	return dealOrder, r.DB.ModelContext(ctx, dealOrder).
+		Column(`id`, `start_time`, `end_time`, `signature`, `participant_id`, `deal_id`).
+		Where(`deal_id = ?`, deal.Id).
+		Where(`start_time IS NOT NULL`).
+		Where(`end_time IS NULL`).
+		Order(`created_at DESC`).
+		First()
+}
+
+func (r *pgGameRepository) FindParticipantWithOrder(ctx context.Context, tableId string, order int) (*model.Participant, error) {
+	participant := &model.Participant{}
+	return participant, r.DB.ModelContext(ctx, participant).
+		Relation(`Player`).
+		Where(`table_id = ?`, tableId).
+		Where(`"participant"."order" = ?`, order).
+		Select()
 }
 
 func (r *pgGameRepository) startSpan(ctx context.Context, operationName string) (context.Context, opentracing.Span) {

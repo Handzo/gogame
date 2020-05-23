@@ -2,7 +2,6 @@ package pubsub
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/Handzo/gogame/common/log"
@@ -13,6 +12,7 @@ type room struct {
 	id     string
 	redis  *redis.Client
 	logger log.Factory
+	pubsub *PubSub
 }
 
 type subscriber struct {
@@ -30,15 +30,20 @@ func (r room) Publish(ctx context.Context, msg interface{}) {
 		fmt.Println(err)
 	}
 
-	payload, err := json.Marshal(msg)
-	if err != nil {
-		// TODO: log error
-		fmt.Println(err)
-	}
+	r.logger.For(ctx).Info("push to room players", log.Object("players", subs))
 
 	for _, sub := range subs {
-		r.redis.Publish(sub, payload)
+		go r.pubsub.ToPlayer(ctx, sub, msg)
 	}
+}
+
+func (r room) publish(ctx context.Context, sub string, msg interface{}) {
+	span, ctx, logger := r.logger.StartFor(ctx, "Publish/"+sub)
+	defer span.Finish()
+
+	logger.Info(msg.(string))
+
+	r.redis.Publish(sub, msg)
 }
 
 func getKey(id string) string {

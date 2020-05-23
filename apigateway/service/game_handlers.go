@@ -21,3 +21,7 @@ func (this apiService) CreateTable(ctx context.Context, req interface{}) (interf
 func (this apiService) JoinTable(ctx context.Context, req interface{}) (interface{}, error) {
 	return this.gamesvc.JoinTable(ctx, req.(*gamepb.JoinTableRequest))
 }
+
+func (this apiService) MakeMove(ctx context.Context, req interface{}) (interface{}, error) {
+	return this.gamesvc.MakeMove(ctx, req.(*gamepb.MakeMoveRequest))
+}

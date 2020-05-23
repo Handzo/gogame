@@ -9,7 +9,7 @@ import (
 
 type Round struct {
 	basemodel.BaseModel
-	StartTime time.Time
+	StartTime time.Time `pg:",notnull,default:now()"`
 	EndTime   time.Time
 	Signature string
 	TableId   string `pg:",notnull,type:uuid"`

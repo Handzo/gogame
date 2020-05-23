@@ -18,4 +18,9 @@ type GameRepository interface {
 	JoinTable(context.Context, string, string) (int, error)
 	Update(context.Context, interface{}, ...string) error
 	Select(context.Context, interface{}, ...string) error
+	Insert(context.Context, interface{}) error
+	FindCurrentRoundForTable(context.Context, string) (*model.Round, error)
+	FindCurrentDealForTable(context.Context, string) (*model.Deal, error)
+	FindCurrentDealOrderForTable(context.Context, string) (*model.DealOrder, error)
+	FindParticipantWithOrder(context.Context, string, int) (*model.Participant, error)
 }

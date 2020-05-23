@@ -10,4 +10,7 @@ var (
 	InternalError       = status.Error(304, "table not found")
 	NoEmptyPlaces       = status.Error(305, "no empty places at the table")
 	BindAdressError     = status.Error(306, "bind adress error")
+	TableNotStarted     = status.Error(307, "table has not been started")
+	TableClosed         = status.Error(308, "table closed")
+	OrderError          = status.Error(309, "wait for your order")
 )

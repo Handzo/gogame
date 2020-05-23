@@ -1,12 +1,32 @@
 package pubsub
 
 import (
+	"time"
+
 	pb "github.com/Handzo/gogame/gameservice/proto"
 )
 
-type StartGameEvent struct {
+type TableStartedEvent struct {
+	Event
+	TableId   string    `json:"table_id"`
+	StartTime time.Time `json:"start_time"`
+}
+
+type NewRoundEvent struct {
 	Event
 	Table pb.Table `json:"table"`
+}
+
+type NewDealOrderEvent struct {
+	Event
+	TableId string `json:"table_id"`
+	Player  Player `json:"player"`
+}
+
+type PlayerMoved struct {
+	Event
+	Card  string `json:"card"`
+	Order int    `json:"order"`
 }
 
 type Table struct {
@@ -24,9 +44,10 @@ type Table struct {
 }
 
 type Player struct {
-	Id         string `json:"id"`
-	Name       string `json:"name"`
-	Order      int    `json:"order"`
-	Cards      string `json:"cards"`
-	CardsCount int    `json:"cards_count"`
+	Id            string `json:"id"`
+	ParticipantId string `json:"participant_id"`
+	Name          string `json:"name"`
+	Order         int    `json:"order"`
+	Cards         string `json:"cards"`
+	CardsCount    int    `json:"cards_count"`
 }
