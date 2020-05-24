@@ -50,11 +50,11 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 		&model.DealOrder{},
 	}
 
-	if err := basemodel.Sync(DB, tables, false); err != nil {
+	if err := basemodel.Sync(DB, tables, true); err != nil {
 		panic(err)
 	}
 
-	if err := (&model.Unit{}).Populate(DB, false); err != nil {
+	if err := (&model.Unit{}).Populate(DB, true); err != nil {
 		panic(err)
 	}
 
@@ -64,6 +64,28 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 		tracer: tracer,
 		logger: logger,
 	}
+}
+
+func (r *pgGameRepository) Select(ctx context.Context, model interface{}, columns ...string) error {
+	return r.DB.ModelContext(ctx, model).
+		Column(columns...).
+		WherePK().
+		Select()
+}
+
+func (r *pgGameRepository) Insert(ctx context.Context, model interface{}) error {
+	_, err := r.DB.ModelContext(ctx, model).Insert()
+	return err
+}
+
+func (r *pgGameRepository) Update(ctx context.Context, model interface{}, columns ...string) error {
+	query := r.DB.ModelContext(ctx, model).WherePK()
+	if len(columns) != 0 {
+		query = query.Column(columns...)
+	}
+
+	_, err := query.Update()
+	return err
 }
 
 func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *model.Player) (bool, error) {
@@ -84,18 +106,6 @@ func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *mod
 	}
 
 	return created, nil
-}
-
-func (r *pgGameRepository) Select(ctx context.Context, model interface{}, columns ...string) error {
-	return r.DB.ModelContext(ctx, model).
-		Column(columns...).
-		WherePK().
-		Select()
-}
-
-func (r *pgGameRepository) Insert(ctx context.Context, model interface{}) error {
-	_, err := r.DB.ModelContext(ctx, model).Insert()
-	return err
 }
 
 func (r *pgGameRepository) CreateSession(ctx context.Context, session *model.Session) error {
@@ -121,16 +131,7 @@ func (r *pgGameRepository) GetOpenedSessionForRemote(ctx context.Context, remote
 	return session, nil
 }
 
-func (r *pgGameRepository) UpdateSessions(ctx context.Context, sessions ...*model.Session) error {
-	m := make([]interface{}, len(sessions))
-	for i, s := range sessions {
-		m[i] = s
-	}
-	_, err := r.DB.ModelContext(ctx, m...).WherePK().Update()
-	return err
-}
-
-func (r *pgGameRepository) CreateTable(ctx context.Context, unitType string, bet uint32) (*model.Table, error) {
+func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, unitType string, bet uint32) (*model.Table, error) {
 	logger := r.logger.For(ctx)
 
 	unit := &model.Unit{}
@@ -142,11 +143,16 @@ func (r *pgGameRepository) CreateTable(ctx context.Context, unitType string, bet
 		return nil, err
 	}
 
-	logger.Info("Inserting new table", log.String("unit_type", unitType), log.Int64("bet", int64(bet)))
+	logger.Info("Inserting new table",
+		log.String("unit_type", unitType),
+		log.Int64("bet", int64(bet)),
+		log.String("creator_id", creatorId),
+	)
 
 	table := &model.Table{
-		Bet:    bet,
-		UnitId: unit.Id,
+		Bet:       bet,
+		UnitId:    unit.Id,
+		CreatorId: creatorId,
 	}
 
 	_, err = r.DB.ModelContext(ctx, table).Insert()
@@ -158,8 +164,9 @@ func (r *pgGameRepository) CreateTable(ctx context.Context, unitType string, bet
 	models := make([]interface{}, 4)
 	for i := 0; i < 4; i++ {
 		models[i] = &model.Participant{
-			Order:   i + 1,
 			TableId: table.Id,
+			Order:   i + 1,
+			State:   model.FREE,
 		}
 	}
 
@@ -189,14 +196,13 @@ func (r *pgGameRepository) FindTable(ctx context.Context, tableId string) (*mode
 	return table, nil
 }
 
-func (r *pgGameRepository) FindPlayersTable(ctx context.Context, playerId string) (*model.Table, error) {
+func (r *pgGameRepository) FindTableWithPlayer(ctx context.Context, playerId string) (*model.Table, error) {
 	participant := &model.Participant{}
 
 	err := r.DB.ModelContext(ctx, participant).
-		Relation(`Table`).
-		Where(`"participant"."player_id" = ?`, playerId).
-		Where(`"table"."start_time" IS NOT NULL`).
-		Where(`"table"."end_time" IS NULL`).
+		Where(`player_id = ?`, playerId).
+		Where(`start_time IS NOT NULL`).
+		Where(`end_time IS NULL`).
 		First()
 
 	if err != nil {
@@ -232,16 +238,6 @@ func (r *pgGameRepository) JoinTable(ctx context.Context, tableId string, player
 	}
 
 	return 0, nil
-}
-
-func (r *pgGameRepository) Update(ctx context.Context, model interface{}, columns ...string) error {
-	query := r.DB.ModelContext(ctx, model).WherePK()
-	if len(columns) != 0 {
-		query = query.Column(columns...)
-	}
-
-	_, err := query.Update()
-	return err
 }
 
 func (r *pgGameRepository) FindCurrentRoundForTable(ctx context.Context, tableId string) (*model.Round, error) {

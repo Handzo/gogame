@@ -18,6 +18,8 @@ type Table struct {
 	Result       string
 	Participants []*Participant
 	Rounds       []*Round
+	CreatorId    string  `pg:",notnull,type:uuid"`
+	Creator      *Player `pg:",fk:creator_id"`
 }
 
 func (Table) Prepare(*pg.DB, bool) error {
@@ -26,4 +28,14 @@ func (Table) Prepare(*pg.DB, bool) error {
 
 func (Table) Sync(*pg.DB, bool) error {
 	return nil
+}
+
+func (t Table) HasEmptyPlaces() bool {
+	for _, p := range t.Participants {
+		if p.Player == nil {
+			return true
+		}
+	}
+
+	return false
 }

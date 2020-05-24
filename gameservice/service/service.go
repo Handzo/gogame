@@ -36,7 +36,6 @@ const (
 	START_DEAL   string = "START_DEAL"
 	FINISH_DEAL  string = "FINISH_DEAL"
 	NEXT_MOVE    string = "NEXT_MOVE"
-	// FINISH_GAME string = "FINISH_GAME"
 )
 
 func NewGameService(
@@ -108,7 +107,7 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 		return nil, err
 	}
 
-	table, err := g.repo.FindPlayersTable(ctx, player.Id)
+	table, err := g.repo.FindTableWithPlayer(ctx, player.Id)
 	if err != nil {
 		return nil, err
 	}
@@ -182,10 +181,11 @@ func (g *gameService) CloseSession(ctx context.Context, req *pb.CloseSessionRequ
 
 func (g *gameService) closeSession(ctx context.Context, session *model.Session) error {
 	session.ClosedAt = time.Now()
-	if err := g.repo.UpdateSessions(ctx, session); err != nil {
+	if err := g.repo.Update(ctx, session, "closed_at"); err != nil {
 		return err
 	}
 
+	// TODO: remove from room, publish 'player leaved' after
 	remote := ctx.Value("remote").(string)
 
 	g.pubsub.Publish(ctx, remote, &pubsub.CloseEvent{
@@ -198,7 +198,7 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 
 func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableRequest) (*pb.CreateTableResponse, error) {
 	g.logger.Bg().Info("create table")
-	table, err := g.repo.CreateTable(ctx, req.UnitType, req.Bet)
+	table, err := g.repo.CreateTable(ctx, ctx.Value("player_id").(string), req.UnitType, req.Bet)
 	if err != nil {
 		return nil, err
 	}
@@ -227,20 +227,15 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		return nil, code.InternalError
 	}
 
-	playerId := ctx.Value("player_id").(string)
+	if !table.HasEmptyPlaces() {
+		return nil, code.NoEmptyPlaces
+	}
 
-	hasEmptyPlace := false
+	playerId := ctx.Value("player_id").(string)
 	for _, p := range table.Participants {
 		if p.PlayerId == playerId {
 			return nil, code.PlayerAlreadyJoined
 		}
-		if p.Player == nil {
-			hasEmptyPlace = true
-		}
-	}
-
-	if !hasEmptyPlace {
-		return nil, code.NoEmptyPlaces
 	}
 
 	logger.Info("get player info")
@@ -271,9 +266,7 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		Participants: make([]*pb.Participant, 4),
 	}
 
-	// TODO: count from ddb
 	pcount := 0
-
 	for _, p := range table.Participants {
 		o := p.Order - 1
 		tableData.Participants[o] = &pb.Participant{
@@ -416,10 +409,11 @@ func (g *gameService) startGame(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.logger.Bg().Info(table.StartTime)
+	if !table.StartTime.IsZero() {
+		return code.TableAlreadyStarted
+	}
 
 	table.StartTime = time.Now()
-	// table.Signature = res.Signature
 	err := g.repo.Update(ctx, table, "start_time")
 	if err != nil {
 		return err
@@ -611,6 +605,9 @@ func (g *gameService) nextMove(ctx context.Context, task *rmq.Task) error {
 	}
 
 	signature, err := enginesig.Parse(table.Signature)
+	if err != nil {
+		return err
+	}
 	signature.Turn += 1
 
 	logger.Info("Get participant with order", log.Int("order", signature.Turn))

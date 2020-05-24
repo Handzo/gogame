@@ -27,8 +27,6 @@ func AuthServerInterceptor(repo repository.GameRepository, pubsub *pubsub.PubSub
 				}
 			}
 			return res, err
-		} else if info.FullMethod == "/GameService/CloseSession" {
-			go pubsub.Unbind(ctx, remote)
 		}
 
 		session, err := repo.GetOpenedSessionForRemote(ctx, remote)
@@ -38,6 +36,10 @@ func AuthServerInterceptor(repo repository.GameRepository, pubsub *pubsub.PubSub
 
 		if session == nil {
 			return nil, code.SessionNotFound
+		}
+
+		if info.FullMethod == "/GameService/CloseSession" {
+			go pubsub.Unbind(ctx, session.PlayerId)
 		}
 
 		ctx = context.WithValue(ctx, "player_id", session.PlayerId)

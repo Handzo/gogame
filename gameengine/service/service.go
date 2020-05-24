@@ -144,8 +144,6 @@ func (e *gameEngine) Move(ctx context.Context, req *pb.MoveRequest) (*pb.MoveRes
 		turn = (turn + sci + 1) % 4
 		sigArray[TURN] = strconv.Itoa(turn)
 
-		fmt.Println(scores, sci)
-
 		t1, err := strconv.Atoi(sigArray[TEAM_1_ROUND_SCORES])
 		if err != nil {
 			return nil, code.InvalidSignature
@@ -253,8 +251,6 @@ func stronger(left, right deck.Card, trump deck.Suit) bool {
 			return left.Face() > right.Face()
 		}
 	}
-	fmt.Println(left, right)
-	panic("bug")
 }
 
 func getScore(card deck.Card) int {
