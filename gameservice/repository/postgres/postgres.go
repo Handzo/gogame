@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"fmt"
 
 	// "github.com/Handzo/gogame/gameservice/code"
 
@@ -50,11 +49,11 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 		&model.DealOrder{},
 	}
 
-	if err := basemodel.Sync(DB, tables, true); err != nil {
+	if err := basemodel.Sync(DB, tables, false); err != nil {
 		panic(err)
 	}
 
-	if err := (&model.Unit{}).Populate(DB, true); err != nil {
+	if err := (&model.Unit{}).Populate(DB, false); err != nil {
 		panic(err)
 	}
 
@@ -67,14 +66,21 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 }
 
 func (r *pgGameRepository) Select(ctx context.Context, model interface{}, columns ...string) error {
-	return r.DB.ModelContext(ctx, model).
+	err := r.DB.ModelContext(ctx, model).
 		Column(columns...).
 		WherePK().
 		Select()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+	return err
 }
 
 func (r *pgGameRepository) Insert(ctx context.Context, model interface{}) error {
 	_, err := r.DB.ModelContext(ctx, model).Insert()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
 	return err
 }
 
@@ -85,6 +91,9 @@ func (r *pgGameRepository) Update(ctx context.Context, model interface{}, column
 	}
 
 	_, err := query.Update()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
 	return err
 }
 
@@ -102,6 +111,7 @@ func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *mod
 		SelectOrInsert(player)
 
 	if err != nil {
+		r.logger.For(ctx).Error(err)
 		return false, err
 	}
 
@@ -110,6 +120,9 @@ func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *mod
 
 func (r *pgGameRepository) CreateSession(ctx context.Context, session *model.Session) error {
 	_, err := r.DB.ModelContext(ctx, session).Insert()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
 	return err
 }
 
@@ -121,6 +134,7 @@ func (r *pgGameRepository) GetOpenedSessionForRemote(ctx context.Context, remote
 		Select()
 	if err != nil {
 		if err != pg.ErrNoRows {
+			r.logger.For(ctx).Error(err)
 			return nil, err
 		}
 
@@ -140,6 +154,7 @@ func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, un
 		Column(`id`, `unit_type`).
 		Select()
 	if err != nil {
+		logger.Error(err)
 		return nil, err
 	}
 
@@ -173,6 +188,9 @@ func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, un
 	logger.Info("Creating 4 participants")
 
 	_, err = r.DB.ModelContext(ctx, models...).Insert()
+	if err != nil {
+		logger.Error(err)
+	}
 	return table, err
 }
 
@@ -186,6 +204,7 @@ func (r *pgGameRepository) FindTable(ctx context.Context, tableId string) (*mode
 		Select()
 	if err != nil {
 		if err != pg.ErrNoRows {
+			r.logger.For(ctx).Error(err)
 			return nil, err
 		}
 
@@ -200,13 +219,15 @@ func (r *pgGameRepository) FindTableWithPlayer(ctx context.Context, playerId str
 	participant := &model.Participant{}
 
 	err := r.DB.ModelContext(ctx, participant).
-		Where(`player_id = ?`, playerId).
-		Where(`start_time IS NOT NULL`).
-		Where(`end_time IS NULL`).
+		Relation(`Table`).
+		Where(`"participant"."player_id" = ?`, playerId).
+		Where(`"table"."start_time" IS NOT NULL`).
+		Where(`"table"."end_time" IS NULL`).
 		First()
 
 	if err != nil {
 		if err != pg.ErrNoRows {
+			r.logger.For(ctx).Error(err)
 			return nil, err
 		}
 
@@ -216,80 +237,80 @@ func (r *pgGameRepository) FindTableWithPlayer(ctx context.Context, playerId str
 	return r.FindTable(ctx, participant.TableId)
 }
 
-func (r *pgGameRepository) CreateParticipants(ctx context.Context, participants ...*model.Participant) error {
-	m := make([]interface{}, len(participants))
-	for i, p := range participants {
-		m[i] = p
-	}
-	_, err := r.DB.ModelContext(ctx, m...).Insert()
-	return err
-}
-
-func (r *pgGameRepository) JoinTable(ctx context.Context, tableId string, playerId string) (int, error) {
-	ctx, span := r.startSpan(ctx, "param.joinTable")
-	if span != nil {
-		defer span.Finish()
-	}
-
-	key := fmt.Sprintf("table:%s", tableId)
-
-	if err := r.redis.RPush(key, playerId).Err(); err != nil {
-		return 0, err
-	}
-
-	return 0, nil
-}
-
 func (r *pgGameRepository) FindCurrentRoundForTable(ctx context.Context, tableId string) (*model.Round, error) {
 	round := &model.Round{}
-	return round, r.DB.ModelContext(ctx, round).
+	err := r.DB.ModelContext(ctx, round).
 		Column(`id`, `start_time`, `end_time`, `signature`, `table_id`).
 		Where(`table_id = ?`, tableId).
 		Where(`start_time IS NOT NULL`).
 		Where(`end_time IS NULL`).
 		Order(`created_at DESC`).
 		First()
+
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+
+	return round, err
 }
 
 func (r *pgGameRepository) FindCurrentDealForTable(ctx context.Context, tableId string) (*model.Deal, error) {
 	round, err := r.FindCurrentRoundForTable(ctx, tableId)
 	if err != nil {
+		r.logger.For(ctx).Error(err)
 		return nil, err
 	}
 
 	deal := &model.Deal{}
-	return deal, r.DB.ModelContext(ctx, deal).
+	err = r.DB.ModelContext(ctx, deal).
 		Column(`id`, `start_time`, `end_time`, `signature`, `round_id`).
 		Where(`round_id = ?`, round.Id).
 		Where(`start_time IS NOT NULL`).
 		Where(`end_time IS NULL`).
 		Order(`created_at DESC`).
 		First()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+	return deal, err
 }
 
 func (r *pgGameRepository) FindCurrentDealOrderForTable(ctx context.Context, tableId string) (*model.DealOrder, error) {
 	deal, err := r.FindCurrentDealForTable(ctx, tableId)
 	if err != nil {
+		r.logger.For(ctx).Error(err)
 		return nil, err
 	}
 
 	dealOrder := &model.DealOrder{}
-	return dealOrder, r.DB.ModelContext(ctx, dealOrder).
+	err = r.DB.ModelContext(ctx, dealOrder).
 		Column(`id`, `start_time`, `end_time`, `signature`, `participant_id`, `deal_id`).
 		Where(`deal_id = ?`, deal.Id).
 		Where(`start_time IS NOT NULL`).
 		Where(`end_time IS NULL`).
 		Order(`created_at DESC`).
 		First()
+
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+
+	return dealOrder, err
 }
 
 func (r *pgGameRepository) FindParticipantWithOrder(ctx context.Context, tableId string, order int) (*model.Participant, error) {
 	participant := &model.Participant{}
-	return participant, r.DB.ModelContext(ctx, participant).
+	err := r.DB.ModelContext(ctx, participant).
 		Relation(`Player`).
 		Where(`table_id = ?`, tableId).
 		Where(`"participant"."order" = ?`, order).
 		Select()
+
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+
+	return participant, err
 }
 
 func (r *pgGameRepository) startSpan(ctx context.Context, operationName string) (context.Context, opentracing.Span) {
