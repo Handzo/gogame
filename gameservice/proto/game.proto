@@ -31,15 +31,14 @@ message Table {
 	uint32 team_2_score = 8;
 	uint32 team_1_total = 9;
 	uint32 team_2_total = 10;
-	repeated Player players = 11;
+	repeated Participant participants = 11;
+    uint32 bet = 12;
+    string unit_type= 13;
 }
 
 message Player {
     string id = 1;
     string name = 2;
-    uint32 order = 3;
-    string cards = 4;
-    uint32 cards_count = 5;
 }
 
 message CloseSessionRequest {}
@@ -62,17 +61,19 @@ message JoinTableRequest {
 }
 
 message JoinTableResponse {
-    string table_id = 1;
-    string unit_type = 2;
-    uint32 bet = 3;
-    repeated Participant participants = 4;
+    Table table = 1;
+    // string table_id = 1;
+    // string unit_type = 2;
+    // uint32 bet = 3;
+    // repeated Participant participants = 4;
 }
 
 message Participant {
     string id = 1;
     uint32 order = 2;
-    string name = 3;
-    Player player = 4;
+    string cards = 3;
+    uint32 cards_count = 4;
+    Player player = 5;
 }
 
 message MakeMoveRequest {

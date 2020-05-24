@@ -13,4 +13,5 @@ var (
 	TableNotStarted     = status.Error(307, "table has not been started")
 	TableClosed         = status.Error(308, "table closed")
 	OrderError          = status.Error(309, "wait for your order")
+	RoundClosedError    = status.Error(310, "round already closed")
 )

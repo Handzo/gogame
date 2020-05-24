@@ -2,10 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
-	"sort"
-	"strconv"
-	"strings"
 	"time"
 
 	authpb "github.com/Handzo/gogame/authservice/proto"
@@ -32,6 +28,17 @@ type gameService struct {
 	worker    *WorkManager
 }
 
+const (
+	START_GAME   string = "START_GAME"
+	FINISH_GAME  string = "FINISH_GAME"
+	START_ROUND  string = "START_ROUND"
+	FINISH_ROUND string = "FINISH_ROUND"
+	START_DEAL   string = "START_DEAL"
+	FINISH_DEAL  string = "FINISH_DEAL"
+	NEXT_MOVE    string = "NEXT_MOVE"
+	// FINISH_GAME string = "FINISH_GAME"
+)
+
 func NewGameService(
 	authsvc authpb.AuthServiceClient,
 	enginesvc enginepb.GameEngineClient,
@@ -50,10 +57,13 @@ func NewGameService(
 		worker:    NewWorkManager(rmq.NewWorker(), tracer, logger),
 	}
 
-	gamesvc.worker.Register("StartTable", gamesvc.startTable)     // set start time
-	gamesvc.worker.Register("NewRound", gamesvc.newRound)         // generate new signature
-	gamesvc.worker.Register("NewDeal", gamesvc.newDeal)           // create new deal
-	gamesvc.worker.Register("NewDealOrder", gamesvc.newDealOrder) // send which player's turn to move
+	gamesvc.worker.Register(START_GAME, gamesvc.startGame)     // set start time
+	gamesvc.worker.Register(FINISH_GAME, gamesvc.finishGame)   // set start time
+	gamesvc.worker.Register(START_ROUND, gamesvc.startRound)   // generate new signature
+	gamesvc.worker.Register(FINISH_ROUND, gamesvc.finishRound) // generate new signature
+	gamesvc.worker.Register(START_DEAL, gamesvc.startDeal)     // create new deal
+	gamesvc.worker.Register(FINISH_DEAL, gamesvc.finishDeal)   // close current deal, start new deal/round or close table
+	gamesvc.worker.Register(NEXT_MOVE, gamesvc.nextMove)       // send which player's turn to move
 	go gamesvc.worker.Start()
 
 	return gamesvc
@@ -108,20 +118,49 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 		PlayerId:  session.PlayerId,
 	}
 
+	// if player at the table
 	if table != nil && table.Signature != "" {
-		tableData := parseSignature(table.Signature)
-		tableData.Id = table.Id
+		sig, err := enginesig.Parse(table.Signature)
+		if err != nil {
+			return nil, err
+		}
+
+		tableData := &pb.Table{
+			Id:           table.Id,
+			Trump:        sig.Trump,
+			Turn:         uint32(sig.Turn + 1),
+			TableCards:   sig.TableCards,
+			ClubPlayer:   uint32(sig.ClubPlayer + 1),
+			Dealer:       uint32(sig.Dealer + 1),
+			Team_1Score:  uint32(sig.Team1Scores),
+			Team_2Score:  uint32(sig.Team2Scores),
+			Team_1Total:  uint32(sig.Team1Total),
+			Team_2Total:  uint32(sig.Team2Total),
+			Participants: make([]*pb.Participant, 4),
+		}
 
 		// remove cards of other players
 		for _, p := range table.Participants {
 			o := p.Order - 1
-			tableData.Players[o].Id = p.PlayerId
-			if p.PlayerId != player.Id {
-				tableData.Players[o].Cards = ""
+			tableData.Participants[o] = &pb.Participant{
+				Id:         p.Id,
+				Order:      uint32(p.Order),
+				CardsCount: uint32(len(sig.PlayerCards[o]) / 2),
+			}
+			if p.PlayerId != "" {
+				tableData.Participants[o].Player = &pb.Player{
+					Id:   p.Player.Id,
+					Name: p.Player.Name,
+				}
+				if p.PlayerId == player.Id {
+					tableData.Participants[o].Cards = sig.PlayerCards[o]
+				}
 			}
 		}
 
-		response.Table = &tableData
+		g.pubsub.AddToRoom(ctx, table.Id, session.PlayerId)
+
+		response.Table = tableData
 	}
 
 	return response, nil
@@ -170,8 +209,6 @@ func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableReques
 	}, nil
 }
 
-var players map[string]struct{} = make(map[string]struct{})
-
 func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (*pb.JoinTableResponse, error) {
 	logger := g.logger.For(ctx)
 
@@ -186,7 +223,7 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 	}
 
 	if len(table.Participants) == 0 {
-		logger.Error("participants not found for table: " + table.Id)
+		logger.Error("participants not found for table", log.String("table", table.Id))
 		return nil, code.InternalError
 	}
 
@@ -229,41 +266,62 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		}
 	}
 
-	res := &pb.JoinTableResponse{
-		TableId:  table.Id,
-		UnitType: string(table.Unit.UnitType),
-		Bet:      table.Bet,
+	tableData := &pb.Table{
+		Id:           table.Id,
+		Participants: make([]*pb.Participant, 4),
 	}
 
-	ps := make([]string, 0, 4)
-
-	// TODO sort participant by id on pg db query
-	sort.Slice(table.Participants, func(i, j int) bool {
-		return table.Participants[i].Order < table.Participants[j].Order
-	})
+	// TODO: count from ddb
+	pcount := 0
 
 	for _, p := range table.Participants {
-		part := &pb.Participant{
+		o := p.Order - 1
+		tableData.Participants[o] = &pb.Participant{
 			Id:    p.Id,
 			Order: uint32(p.Order),
 		}
-
-		if p.Player != nil {
-			ps = append(ps, p.Player.Id)
-			part.Player = &pb.Player{
+		if p.PlayerId != "" {
+			pcount++
+			tableData.Participants[o].Player = &pb.Player{
 				Id:   p.Player.Id,
 				Name: p.Player.Name,
 			}
 		}
-		res.Participants = append(res.Participants, part)
+	}
+
+	if table.Signature != "" {
+		sig, err := enginesig.Parse(table.Signature)
+		if err != nil {
+			return nil, err
+		}
+
+		tableData.Trump = sig.Trump
+		tableData.Turn = uint32(sig.Turn + 1)
+		tableData.TableCards = sig.TableCards
+		tableData.ClubPlayer = uint32(sig.ClubPlayer + 1)
+		tableData.Dealer = uint32(sig.Dealer + 1)
+		tableData.Team_1Score = uint32(sig.Team1Scores)
+		tableData.Team_2Score = uint32(sig.Team2Scores)
+		tableData.Team_1Total = uint32(sig.Team1Total)
+		tableData.Team_2Total = uint32(sig.Team2Total)
+
+		for _, p := range tableData.Participants {
+			p.CardsCount = uint32(len(sig.PlayerCards[p.Order-1]) / 2)
+			if p.Player.Id != "" {
+				p.Cards = sig.PlayerCards[p.Order-1]
+			}
+		}
+	}
+
+	res := &pb.JoinTableResponse{
+		Table: tableData,
 	}
 
 	g.pubsub.AddToRoom(ctx, table.Id, playerId)
 
-	if len(ps) == 4 {
-		g.worker.AddTask(rmq.NewTask("StartTable", table.Id,
+	if pcount == 4 {
+		g.worker.AddTask(rmq.NewTask(START_GAME, table.Id,
 			rmq.WithDelay(time.Second),
-			rmq.WithPayload(strings.Join(ps, ",")),
 		))
 	}
 
@@ -332,27 +390,21 @@ func (g *gameService) MakeMove(ctx context.Context, req *pb.MakeMoveRequest) (*p
 		Order: participant.Order,
 	})
 
-	sigArray := strings.Split(res.Signature, ":")
-	if sigArray[enginesig.TABLE] == "" {
-		deal, err := g.repo.FindCurrentDealForTable(ctx, table.Id)
-		if err != nil {
-			return nil, err
-		}
+	signature, err := enginesig.Parse(res.Signature)
+	if err != nil {
+		return nil, err
+	}
 
-		deal.EndTime = time.Now()
-		if err = g.repo.Update(ctx, deal, "end_time"); err != nil {
-			return nil, err
-		}
-
-		g.worker.AddTask(rmq.NewTask("NewDeal", table.Id, rmq.WithDelay(time.Second)))
+	if signature.TableEmpty() {
+		g.worker.AddTask(rmq.NewTask(FINISH_DEAL, table.Id, rmq.WithDelay(time.Second)))
 	} else {
-		g.worker.AddTask(rmq.NewTask("NewDealOrder", table.Id, rmq.WithDelay(time.Second)))
+		g.worker.AddTask(rmq.NewTask(NEXT_MOVE, table.Id, rmq.WithDelay(time.Second)))
 	}
 
 	return &pb.MakeMoveResponse{}, nil
 }
 
-func (g *gameService) startTable(ctx context.Context, task *rmq.Task) error {
+func (g *gameService) startGame(ctx context.Context, task *rmq.Task) error {
 	logger := g.logger.For(ctx)
 	logger.Info("Starting new game for table", log.String("table", task.Topic))
 
@@ -373,26 +425,26 @@ func (g *gameService) startTable(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.TableStartedEvent{
-		Event:     pubsub.Event{"TableStarted"},
-		TableId:   table.Id,
+	// TOOD: maybe set table data, participants
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.GameStarted{
+		Event: pubsub.Event{"GameStarted"},
+		Table: pubsub.Table{
+			Id: table.Id,
+		},
 		StartTime: table.StartTime,
 	})
 
-	g.worker.AddTask(rmq.NewTask("NewRound", table.Id, rmq.WithDelay(time.Second), rmq.WithPayload(task.Payload)))
+	g.worker.AddTask(rmq.NewTask(START_ROUND, table.Id, rmq.WithDelay(time.Second)))
 
 	return nil
 }
 
-func (g *gameService) newRound(ctx context.Context, task *rmq.Task) error {
+func (g *gameService) startRound(ctx context.Context, task *rmq.Task) error {
 	logger := g.logger.For(ctx)
 	logger.Info("Starting new round for table", log.String("table", task.Topic))
 
-	// TODO: get players id from db
-	table := &model.Table{}
-	table.Id = task.Topic
-
-	if err := g.repo.Select(ctx, table, "start_time", "end_time", "signature"); err != nil {
+	table, err := g.repo.FindTable(ctx, task.Topic)
+	if err != nil {
 		return err
 	}
 
@@ -435,42 +487,62 @@ func (g *gameService) newRound(ctx context.Context, task *rmq.Task) error {
 	}
 
 	// parse signature
-	tableData := parseSignature(res.Signature)
-	tableData.Id = table.Id
+	sig, err := enginesig.Parse(res.Signature)
+	if err != nil {
+		return err
+	}
 
-	// take copy of players with all cards
-	players := tableData.Players
+	tableData := pubsub.Table{
+		Id:           table.Id,
+		Trump:        sig.Trump,
+		ClubPlayer:   sig.ClubPlayer + 1,
+		Dealer:       sig.Dealer + 1,
+		Team1Score:   sig.Team1Scores,
+		Team2Score:   sig.Team2Scores,
+		Team1Total:   sig.Team1Total,
+		Team2Total:   sig.Team2Total,
+		Participants: make([]pubsub.Participant, 4),
+	}
 
-	// substitute players without cards
-	tableData.Players = make([]*pb.Player, 4)
-	for i, p := range strings.Split(task.Payload, ",") {
-		tableData.Players[i] = &pb.Player{
-			Id:         p,
-			Order:      uint32(i + 1),
-			CardsCount: uint32(len(players[i].Cards) / 2),
+	table, err = g.repo.FindTable(ctx, table.Id)
+	if err != nil {
+		return err
+	}
+
+	for i, p := range table.Participants {
+		tableData.Participants[i] = pubsub.Participant{
+			Id:         p.Id,
+			Order:      p.Order,
+			CardsCount: len(sig.PlayerCards[p.Order-1]) / 2,
+		}
+		if p.PlayerId != "" {
+			tableData.Participants[i].Player = pubsub.Player{
+				Id:   p.Player.Id,
+				Name: p.Player.Name,
+			}
 		}
 	}
 
 	logger.Info("Sending cards to players")
-	ev := pubsub.NewRoundEvent{
-		Event: pubsub.Event{"NewRound"},
+	ev := pubsub.RoundStarted{
+		Event: pubsub.Event{"RoundStarted"},
 		Table: tableData,
 	}
 
-	nocards := tableData.Players
+	nocards := tableData.Participants
 
-	for i, player := range players {
+	for _, participant := range table.Participants {
 		send := ev
-		send.Table.Players = copyPlayers(nocards)
-		send.Table.Players[i].Cards = player.Cards
-		go g.pubsub.ToPlayer(ctx, send.Table.Players[i].Id, send)
+		send.Table.Participants = copyParticipants(nocards)
+		send.Table.Participants[participant.Order-1].Cards = sig.PlayerCards[participant.Order-1]
+		go g.pubsub.ToPlayer(ctx, participant.PlayerId, send)
 	}
 
-	g.worker.AddTask(rmq.NewTask("NewDeal", table.Id, rmq.WithDelay(time.Second)))
+	g.worker.AddTask(rmq.NewTask(START_DEAL, table.Id, rmq.WithDelay(time.Second)))
 	return nil
 }
 
-func (g *gameService) newDeal(ctx context.Context, task *rmq.Task) error {
+func (g *gameService) startDeal(ctx context.Context, task *rmq.Task) error {
 	logger := g.logger.For(ctx)
 	logger.Info("Creating new deal for table", log.String("table", task.Topic))
 
@@ -508,11 +580,11 @@ func (g *gameService) newDeal(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.worker.AddTask(rmq.NewTask("NewDealOrder", table.Id, rmq.WithDelay(time.Second)))
+	g.worker.AddTask(rmq.NewTask(NEXT_MOVE, table.Id, rmq.WithDelay(time.Second)))
 	return nil
 }
 
-func (g *gameService) newDealOrder(ctx context.Context, task *rmq.Task) error {
+func (g *gameService) nextMove(ctx context.Context, task *rmq.Task) error {
 	logger := g.logger.For(ctx)
 	logger.Info("Creating new deal order for table", log.String("table", task.Topic))
 
@@ -538,12 +610,11 @@ func (g *gameService) newDealOrder(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	sigArray := strings.Split(table.Signature, ":")
-	turn, _ := strconv.Atoi(sigArray[enginesig.TURN])
-	turn += 1
+	signature, err := enginesig.Parse(table.Signature)
+	signature.Turn += 1
 
-	logger.Info("Get participant with order", log.Int("order", turn))
-	participant, err := g.repo.FindParticipantWithOrder(ctx, table.Id, turn)
+	logger.Info("Get participant with order", log.Int("order", signature.Turn))
+	participant, err := g.repo.FindParticipantWithOrder(ctx, table.Id, signature.Turn)
 	if err != nil {
 		return err
 	}
@@ -559,14 +630,12 @@ func (g *gameService) newDealOrder(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.NewDealOrderEvent{
-		Event:   pubsub.Event{"NewDealOrder"},
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.WaitForMove{
+		Event:   pubsub.Event{"WaitForMove"},
 		TableId: table.Id,
-		Player: pubsub.Player{
-			Id:            participant.Player.Id,
-			ParticipantId: participant.Id,
-			Name:          participant.Player.Name,
-			Order:         turn,
+		Participant: pubsub.Participant{
+			Id:    participant.Id,
+			Order: signature.Turn,
 		},
 	})
 
@@ -575,52 +644,134 @@ func (g *gameService) newDealOrder(ctx context.Context, task *rmq.Task) error {
 	return nil
 }
 
-func copyPlayers(players []*pb.Player) []*pb.Player {
-	ps := make([]*pb.Player, len(players))
-	for i, p := range players {
-		c := *p
-		ps[i] = &c
+func (g *gameService) finishDeal(ctx context.Context, task *rmq.Task) error {
+	logger := g.logger.For(ctx)
+	logger.Info("Creating new deal order for table", log.String("table", task.Topic))
+
+	table := &model.Table{}
+	table.Id = task.Topic
+	if err := g.repo.Select(ctx, table, "start_time", "end_time", "signature"); err != nil {
+		return err
+	}
+
+	deal, err := g.repo.FindCurrentDealForTable(ctx, table.Id)
+	if err != nil {
+		return err
+	}
+
+	deal.EndTime = time.Now()
+	if err = g.repo.Update(ctx, deal, "end_time"); err != nil {
+		return err
+	}
+
+	sig, err := enginesig.Parse(table.Signature)
+	if err != nil {
+		return err
+	}
+
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.DealFinished{
+		Event: pubsub.Event{"DealFinished"},
+		Table: pubsub.Table{
+			Id:         table.Id,
+			Turn:       sig.Turn + 1,
+			Team1Score: sig.Team1Scores,
+			Team2Score: sig.Team2Scores,
+		},
+	})
+
+	if sig.IsRoundFinished() {
+		g.worker.AddTask(rmq.NewTask(FINISH_ROUND, table.Id, rmq.WithDelay(time.Second)))
+	} else {
+		// new deal
+		g.worker.AddTask(rmq.NewTask(START_DEAL, table.Id, rmq.WithDelay(time.Second)))
+	}
+
+	return nil
+}
+
+func (g *gameService) finishRound(ctx context.Context, task *rmq.Task) error {
+	table := &model.Table{}
+	table.Id = task.Topic
+	if err := g.repo.Select(ctx, table, "end_time", "start_time", "signature"); err != nil {
+		return err
+	}
+
+	if table.StartTime.IsZero() {
+		return code.TableNotStarted
+	}
+
+	if !table.EndTime.IsZero() {
+		return code.TableClosed
+	}
+
+	round, err := g.repo.FindCurrentRoundForTable(ctx, table.Id)
+	if err != nil {
+		return err
+	}
+
+	if !round.EndTime.IsZero() {
+		return code.RoundClosedError
+	}
+
+	round.EndTime = time.Now()
+	if err := g.repo.Update(ctx, round, "end_time"); err != nil {
+		return err
+	}
+
+	sig, err := enginesig.Parse(table.Signature)
+	if err != nil {
+		return err
+	}
+
+	g.pubsub.Room(task.Topic).Publish(ctx, &pubsub.RoundFinished{
+		Event: pubsub.Event{"RoundFinished"},
+		Table: pubsub.Table{
+			Id:         table.Id,
+			Team1Total: sig.Team1Total,
+			Team2Total: sig.Team2Total,
+		},
+	})
+
+	// push total scores
+	if sig.IsGameFinished() {
+		g.worker.AddTask(rmq.NewTask(FINISH_GAME, table.Id, rmq.WithDelay(time.Second)))
+	} else {
+		g.worker.AddTask(rmq.NewTask(START_ROUND, table.Id, rmq.WithDelay(time.Second)))
+	}
+
+	return nil
+}
+
+func (g *gameService) finishGame(ctx context.Context, task *rmq.Task) error {
+	table := &model.Table{}
+	table.Id = task.Topic
+	if err := g.repo.Select(ctx, table, "end_time"); err != nil {
+		return err
+	}
+
+	if !table.EndTime.IsZero() {
+		return code.TableClosed
+	}
+
+	// close table
+	table.EndTime = time.Now()
+	if err := g.repo.Update(ctx, table, "end_time"); err != nil {
+		return err
+	}
+
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.GameFinished{
+		Event:   pubsub.Event{"GameFinished"},
+		EndTime: table.EndTime,
+	})
+
+	return nil
+}
+
+func copyParticipants(participants []pubsub.Participant) []pubsub.Participant {
+	ps := make([]pubsub.Participant, len(participants))
+	for i, p := range participants {
+		ps[i] = p
 	}
 
 	return ps
-}
-
-// func (g *gameService) startMove(ctx context.Context, task *rmq.Task) error {
-// 	g.logger.For(ctx).Info(task)
-// 	return nil
-// }
-
-func parseSignature(signature string) pb.Table {
-	data := strings.Split(signature, ":")
-	turn, _ := strconv.Atoi(data[enginesig.TURN])
-	cplayer, _ := strconv.Atoi(data[enginesig.CPLAYER])
-	dealer, _ := strconv.Atoi(data[enginesig.DEALER])
-	team1Score, _ := strconv.Atoi(data[enginesig.TEAM_1_ROUND_SCORES])
-	team2Score, _ := strconv.Atoi(data[enginesig.TEAM_2_ROUND_SCORES])
-	team1Total, _ := strconv.Atoi(data[enginesig.TEAM_1_TOTAL])
-	team2Total, _ := strconv.Atoi(data[enginesig.TEAM_2_TOTAL])
-
-	table := pb.Table{
-		Trump:       data[enginesig.TRUMP],
-		Turn:        uint32(turn + 1),
-		TableCards:  data[enginesig.TABLE],
-		ClubPlayer:  uint32(cplayer + 1),
-		Dealer:      uint32(dealer + 1),
-		Team_1Score: uint32(team1Score),
-		Team_2Score: uint32(team2Score),
-		Team_1Total: uint32(team1Total),
-		Team_2Total: uint32(team2Total),
-		Players:     make([]*pb.Player, 4),
-	}
-
-	for i, _ := range table.Players {
-		table.Players[i] = &pb.Player{
-			CardsCount: uint32(len(data[i]) / 2),
-			Cards:      data[i],
-		}
-	}
-
-	fmt.Println(table.Players)
-
-	return table
 }
