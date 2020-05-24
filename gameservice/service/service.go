@@ -525,10 +525,10 @@ func (g *gameService) startRound(ctx context.Context, task *rmq.Task) error {
 
 	nocards := tableData.Participants
 
-	for _, participant := range table.Participants {
+	for i, participant := nocards {
 		send := ev
 		send.Table.Participants = copyParticipants(nocards)
-		send.Table.Participants[participant.Order-1].Cards = sig.PlayerCards[participant.Order-1]
+		send.Table.Participants[i].Cards = sig.PlayerCards[participant.Order-1]
 		go g.pubsub.ToPlayer(ctx, participant.PlayerId, send)
 	}
 
