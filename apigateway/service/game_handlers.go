@@ -22,6 +22,14 @@ func (this apiService) JoinTable(ctx context.Context, req interface{}) (interfac
 	return this.gamesvc.JoinTable(ctx, req.(*gamepb.JoinTableRequest))
 }
 
+func (this apiService) BecomeParticipant(ctx context.Context, req interface{}) (interface{}, error) {
+	return this.gamesvc.BecomeParticipant(ctx, req.(*gamepb.BecomeParticipantRequest))
+}
+
+func (this apiService) Ready(ctx context.Context, req interface{}) (interface{}, error) {
+	return this.gamesvc.Ready(ctx, req.(*gamepb.ReadyRequest))
+}
+
 func (this apiService) MakeMove(ctx context.Context, req interface{}) (interface{}, error) {
 	return this.gamesvc.MakeMove(ctx, req.(*gamepb.MakeMoveRequest))
 }

@@ -45,6 +45,23 @@ type PlayerMoved struct {
 	Order int    `json:"order"`
 }
 
+type PlayerJoined struct {
+	Event  string `json:"event"`
+	Player Player `json:"player"`
+}
+
+type PlayerLeaved struct {
+	Event         string `json:"event"`
+	TableId       string `json:"table_id"`
+	ParticiapntId string `json:"participant_id"`
+	PlayerId      string `json:"player_id"`
+}
+
+type ParticipantStateChanged struct {
+	Event       string      `json:"event"`
+	Participant Participant `json:"participant"`
+}
+
 type Table struct {
 	Id           string        `json:"id"`
 	Trump        string        `json:"trump"`
@@ -62,6 +79,7 @@ type Table struct {
 type Participant struct {
 	Id         string `json:"id"`
 	Order      int    `json:"order"`
+	State      string `json:"state"`
 	Player     Player `json:"player"`
 	Cards      string `json:"cards"`
 	CardsCount int    `json:"cards_count"`

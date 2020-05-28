@@ -40,8 +40,7 @@ func (w *WorkManager) AddTask(task *rmq.Task) error {
 }
 
 func (w *WorkManager) process(task *rmq.Task) {
-	ctx := context.WithValue(context.Background(), "c", "b")
-	span, ctx, logger := w.logger.StartForWithTracer(ctx, w.tracer, "Worker/"+task.Callback)
+	span, ctx, logger := w.logger.StartForWithTracer(context.Background(), w.tracer, "Worker/"+task.Callback)
 	defer span.Finish()
 
 	logger.Info("New task received", log.String("task", task.Callback), log.String("topic", task.Topic))

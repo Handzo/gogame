@@ -10,6 +10,7 @@ import (
 
 type room struct {
 	id     string
+	subs   []string
 	redis  *redis.Client
 	logger log.Factory
 	pubsub *PubSub

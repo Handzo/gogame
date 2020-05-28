@@ -55,7 +55,18 @@ func (p *PubSub) Publish(ctx context.Context, channel string, msg interface{}) {
 }
 
 func (p *PubSub) Room(id string) *room {
-	return &room{id, p.redis, p.logger, p}
+	subs, err := p.GetPlayers(id)
+	if err != nil {
+		return nil
+	}
+
+	return &room{
+		id:     id,
+		subs:   subs,
+		redis:  p.redis,
+		logger: p.logger,
+		pubsub: p,
+	}
 }
 
 func (p *PubSub) ToPlayer(ctx context.Context, id string, msg interface{}) {
@@ -68,29 +79,6 @@ func (p *PubSub) ToPlayer(ctx context.Context, id string, msg interface{}) {
 	p.Publish(ctx, remote, msg)
 }
 
-// func (p *PubSub) PublishToRoom(ctx context.Context, roomId string, msg interface{}) {
-// 	ctx, span := p.startSpan(ctx, "room:"+roomId)
-// 	if span != nil {
-// 		defer span.Finish()
-// 	}
-
-// 	logger := p.logger.For(ctx)
-
-// 	key := fmt.Sprintf("room:%s", roomId)
-
-// 	logger.Info("get room members", log.String("room", roomId))
-
-// 	players, err := p.redis.SMembers(key).Result()
-// 	if err != nil {
-// 		logger.Error(err)
-// 	}
-
-// 	for _, player := range players {
-// 		logger.Info("push to " + player)
-// 		p.Publish(ctx, player, msg)
-// 	}
-// }
-
 func (p *PubSub) AddToRoom(ctx context.Context, roomId, player string) {
 	key := roomKey(roomId)
 	ctx, span := p.startSpan(ctx, key)
@@ -101,6 +89,25 @@ func (p *PubSub) AddToRoom(ctx context.Context, roomId, player string) {
 	logger := p.logger.For(ctx).With(log.String("room", key))
 
 	cmd := p.redis.SAdd(key, player)
+
+	val, err := cmd.Result()
+
+	if err != nil {
+		logger.Error(err)
+	}
+
+	logger.Info(cmd, log.Int64("param.received", val))
+}
+func (p *PubSub) RemoveFromRoom(ctx context.Context, roomId, player string) {
+	key := roomKey(roomId)
+	ctx, span := p.startSpan(ctx, key)
+	if span != nil {
+		defer span.Finish()
+	}
+
+	logger := p.logger.For(ctx).With(log.String("room", key))
+
+	cmd := p.redis.SRem(key, player)
 
 	val, err := cmd.Result()
 

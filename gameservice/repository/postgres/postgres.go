@@ -215,6 +215,21 @@ func (r *pgGameRepository) FindTable(ctx context.Context, tableId string) (*mode
 	return table, nil
 }
 
+func (r *pgGameRepository) TableReadyCount(ctx context.Context, tableId string) (int, error) {
+	p := &model.Participant{}
+	count, err := r.DB.ModelContext(ctx, p).
+		Where(`table_id = ?`, tableId).
+		Where(`state = ?`, model.READY).
+		Count()
+
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+		return count, err
+	}
+
+	return count, err
+}
+
 func (r *pgGameRepository) FindTableWithPlayer(ctx context.Context, playerId string) (*model.Table, error) {
 	participant := &model.Participant{}
 
@@ -235,6 +250,19 @@ func (r *pgGameRepository) FindTableWithPlayer(ctx context.Context, playerId str
 	}
 
 	return r.FindTable(ctx, participant.TableId)
+}
+
+func (r *pgGameRepository) GetParticipantsForPlayer(ctx context.Context, playerId string) ([]*model.Participant, error) {
+	participants := []*model.Participant{}
+	err := r.DB.ModelContext(ctx, &participants).
+		Relation(`Table`).
+		Where(`"participant"."player_id" = ?`, playerId).
+		Where(`"table"."end_time" IS NULL`).
+		Select()
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+	return participants, err
 }
 
 func (r *pgGameRepository) FindCurrentRoundForTable(ctx context.Context, tableId string) (*model.Round, error) {

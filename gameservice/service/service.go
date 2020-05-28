@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	authpb "github.com/Handzo/gogame/authservice/proto"
@@ -188,11 +189,72 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 	// TODO: remove from room, publish 'player leaved' after
 	remote := ctx.Value("remote").(string)
 
+	if playerId := ctx.Value("player_id"); playerId != nil {
+		err := g.beforeSessionClosed(ctx, playerId.(string))
+		if err != nil {
+			return err
+		}
+	}
+
 	g.pubsub.Publish(ctx, remote, &pubsub.CloseEvent{
 		Event:     pubsub.Event{"CloseSession"},
 		SessionId: session.Id,
 		PlayerId:  session.PlayerId,
 	})
+	return nil
+}
+
+func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) error {
+	// remove from table if game has not been started
+	participants, err := g.repo.GetParticipantsForPlayer(ctx, playerId)
+	if err != nil {
+		return err
+	}
+
+	type part_state_changed struct {
+		Event         string `json:"event"`
+		TableId       string `json:"table_id"`
+		ParticipantId string `json:"participant_id"`
+		State         string `json:"state"`
+	}
+
+	for _, p := range participants {
+		if p.Table.StartTime.IsZero() {
+			p.State = model.FREE
+		} else {
+			p.State = model.DISCONNECT
+		}
+
+		room := g.pubsub.Room(p.TableId)
+
+		room.Publish(ctx, &pubsub.PlayerLeaved{
+			Event:         "PlayerLeaved",
+			TableId:       p.TableId,
+			ParticipantId: p.Id,
+			PlayerId:      p.PlayerId,
+		})
+
+		if p.State == model.FREE {
+			p.PlayerId = ""
+		}
+
+		err := g.repo.Update(ctx, p, "player_id", "state")
+		if err != nil {
+			return err
+		}
+
+		room.Publish(ctx, &pubsub.ParticipantStateChanged{
+			Event: "ParticipantStateChanged",
+			Participant: &pubsub.Participant{
+				Id:    p.Id,
+				Order: p.Order,
+				State: string(p.State),
+			},
+		})
+
+		g.pubsub.RemoveFromRoom(ctx, p.TableId, playerId)
+	}
+
 	return nil
 }
 
@@ -209,10 +271,83 @@ func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableReques
 	}, nil
 }
 
+func (g *gameService) BecomeParticipant(ctx context.Context, req *pb.BecomeParticipantRequest) (*pb.BecomeParticipantResponse, error) {
+	logger := g.logger.For(ctx)
+
+	participant := &model.Participant{}
+	participant.Id = req.ParticipantId
+	// find table in pg
+	if err := g.repo.Select(ctx, participant, "id", "state", "table_id"); err != nil {
+		return nil, err
+	}
+
+	if participant.State != model.FREE {
+		return nil, code.ParticipantStateIsNotFree
+	}
+
+	table, err := g.repo.FindTable(ctx, participant.TableId)
+	if err != nil {
+		return nil, err
+	}
+
+	if table == nil {
+		return nil, code.TableNotFound
+	}
+
+	if len(table.Participants) == 0 {
+		logger.Error("participants not found for table", log.String("table", table.Id))
+		return nil, code.InternalError
+	}
+
+	playerId := ctx.Value("player_id").(string)
+	for _, p := range table.Participants {
+		if p.PlayerId != "" {
+			if p.PlayerId == playerId {
+				return nil, code.PlayerAlreadyParticipant
+			}
+		}
+	}
+
+	logger.Info("get player info")
+
+	player := &model.Player{}
+	player.Id = playerId
+
+	err = g.repo.Select(ctx, player, "id", "name")
+	if err != nil {
+		return nil, err
+	}
+
+	participant.PlayerId = playerId
+	participant.Player = player
+	participant.State = model.BUSY
+
+	logger.Info("set player as participant", log.String("player_id", playerId), log.String("participant_id", participant.Id))
+	if err := g.repo.Update(ctx, participant, "player_id", "state"); err != nil {
+		return nil, err
+	}
+
+	g.pubsub.Room(table.Id).Publish(ctx, pubsub.ParticipantStateChanged{
+		Event: "ParticipantStateChanged",
+		Participant: pubsub.Participant{
+			Id:    participant.Id,
+			State: string(participant.State),
+			Player: pubsub.Player{
+				Id:   participant.Player.Id,
+				Name: participant.Player.Name,
+			},
+		},
+	})
+
+	g.logger.For(ctx).Info("Player became a participant", log.String("player_id", playerId))
+
+	return &pb.BecomeParticipantResponse{}, nil
+}
+
 func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (*pb.JoinTableResponse, error) {
 	logger := g.logger.For(ctx)
 
-	// find table in pg
+	// find requested table
 	table, err := g.repo.FindTable(ctx, req.TableId)
 	if err != nil {
 		return nil, err
@@ -227,19 +362,7 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		return nil, code.InternalError
 	}
 
-	if !table.HasEmptyPlaces() {
-		return nil, code.NoEmptyPlaces
-	}
-
 	playerId := ctx.Value("player_id").(string)
-	for _, p := range table.Participants {
-		if p.PlayerId == playerId {
-			return nil, code.PlayerAlreadyJoined
-		}
-	}
-
-	logger.Info("get player info")
-
 	player := &model.Player{}
 	player.Id = playerId
 
@@ -248,15 +371,38 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		return nil, err
 	}
 
+	g.pubsub.Room(table.Id).Publish(ctx, pubsub.PlayerJoined{
+		Event: "PlayerJoined",
+		Player: pubsub.Player{
+			Id:   player.Id,
+			Name: player.Name,
+		},
+	})
+
 	for _, p := range table.Participants {
-		if p.PlayerId == "" {
-			p.PlayerId = playerId
-			p.Player = player
-			logger.Info("set player as participant", log.String("player_id", playerId), log.String("participant_id", p.Id))
-			err = g.repo.Update(ctx, p, "player_id")
-			if err != nil {
+		if p.PlayerId == playerId {
+			if p.State == model.BUSY {
+				return nil, code.PlayerAlreadyJoined
+			}
+
+			p.State = model.READY
+
+			if err := g.repo.Update(ctx, p, "state"); err != nil {
 				return nil, err
 			}
+
+			g.pubsub.Room(table.Id).Publish(ctx, pubsub.ParticipantStateChanged{
+				Event: "ParticipantStateChanged",
+				Participant: pubsub.Participant{
+					Id:    p.Id,
+					Order: p.Order,
+					State: string(p.State),
+					Player: pubsub.Player{
+						Id:   p.Player.Id,
+						Name: p.Player.Name,
+					},
+				},
+			})
 			break
 		}
 	}
@@ -266,7 +412,6 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		Participants: make([]*pb.Participant, 4),
 	}
 
-	pcount := 0
 	for _, p := range table.Participants {
 		o := p.Order - 1
 		tableData.Participants[o] = &pb.Participant{
@@ -274,7 +419,6 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 			Order: uint32(p.Order),
 		}
 		if p.PlayerId != "" {
-			pcount++
 			tableData.Participants[o].Player = &pb.Player{
 				Id:   p.Player.Id,
 				Name: p.Player.Name,
@@ -298,29 +442,63 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		tableData.Team_1Total = uint32(sig.Team1Total)
 		tableData.Team_2Total = uint32(sig.Team2Total)
 
+		fmt.Println(tableData.Participants)
 		for _, p := range tableData.Participants {
 			p.CardsCount = uint32(len(sig.PlayerCards[p.Order-1]) / 2)
-			if p.Player.Id != "" {
+			if p.Player.Id == playerId {
 				p.Cards = sig.PlayerCards[p.Order-1]
 			}
 		}
 	}
 
-	res := &pb.JoinTableResponse{
-		Table: tableData,
-	}
-
 	g.pubsub.AddToRoom(ctx, table.Id, playerId)
-
-	if pcount == 4 {
-		g.worker.AddTask(rmq.NewTask(START_GAME, table.Id,
-			rmq.WithDelay(time.Second),
-		))
-	}
 
 	g.logger.For(ctx).Info("Player joined", log.String("player_id", playerId))
 
-	return res, nil
+	return &pb.JoinTableResponse{
+		Table: tableData,
+	}, nil
+}
+
+func (g *gameService) Ready(ctx context.Context, req *pb.ReadyRequest) (*pb.ReadyResponse, error) {
+	participant := &model.Participant{}
+	participant.Id = req.ParticipantId
+
+	if err := g.repo.Select(ctx, participant, "state", "table_id"); err != nil {
+		return nil, err
+	}
+
+	if participant.State == model.READY {
+		return nil, code.ParticipantReady
+	}
+
+	participant.State = model.READY
+	if err := g.repo.Update(ctx, participant, "state"); err != nil {
+		return nil, err
+	}
+
+	g.pubsub.Room(participant.TableId).Publish(ctx, pubsub.ParticipantStateChanged{
+		Event: "ParticipantStateChanged",
+		Participant: pubsub.Participant{
+			Id:    participant.Id,
+			Order: participant.Order,
+			State: string(participant.State),
+		},
+	})
+
+	count, err := g.repo.TableReadyCount(ctx, participant.TableId)
+	if err != nil {
+		return nil, err
+	}
+
+	g.logger.For(ctx).Info(count)
+
+	if count == 4 {
+		startGameTask := rmq.NewTask(START_GAME, participant.TableId, rmq.WithDelay(time.Second))
+		g.worker.AddTask(startGameTask)
+	}
+
+	return &pb.ReadyResponse{}, nil
 }
 
 func (g *gameService) MakeMove(ctx context.Context, req *pb.MakeMoveRequest) (*pb.MakeMoveResponse, error) {

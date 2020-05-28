@@ -10,6 +10,7 @@ type ParticipantState string
 var (
 	FREE       ParticipantState = "free"
 	BUSY       ParticipantState = "busy"
+	READY      ParticipantState = "ready"
 	DISCONNECT ParticipantState = "disconnect"
 )
 
@@ -28,6 +29,7 @@ func (Participant) Prepare(db *pg.DB, force bool) error {
 		db, force, "participant_state",
 		string(FREE),
 		string(BUSY),
+		string(READY),
 		string(DISCONNECT),
 	)
 }

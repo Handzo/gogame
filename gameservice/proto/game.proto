@@ -7,6 +7,8 @@ service GameService {
     // Table requests
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
     rpc JoinTable(JoinTableRequest) returns (JoinTableResponse);
+    rpc BecomeParticipant(BecomeParticipantRequest) returns (BecomeParticipantResponse);
+    rpc Ready(ReadyRequest) returns (ReadyResponse);
     rpc MakeMove(MakeMoveRequest) returns (MakeMoveResponse);
 }
 
@@ -18,6 +20,56 @@ message OpenSessionResponse {
     string session_id = 1;
     string player_id = 2;
     Table table = 3;
+}
+
+message CloseSessionRequest {}
+message CloseSessionResponse {}
+
+message CreateTableRequest {
+    string unit_type = 1;
+    uint32 bet = 2;
+}
+
+message CreateTableResponse {
+    string table_id = 1;
+    string unit_type = 2;
+    uint32 bet = 3;
+}
+
+message JoinTableRequest {
+    string table_id = 1;
+}
+
+message JoinTableResponse {
+    Table table = 1;
+}
+
+message BecomeParticipantRequest {
+    string table_id = 1;
+    string participant_id = 2;
+}
+
+message BecomeParticipantResponse {}
+
+message ReadyRequest {
+    string participant_id = 1;
+}
+message ReadyResponse {}
+
+message MakeMoveRequest {
+    string table_id = 1;
+    string card = 2;
+}
+
+message MakeMoveResponse{}
+
+message Participant {
+    string id = 1;
+    uint32 order = 2;
+    string state = 3;
+    string cards = 4;
+    uint32 cards_count = 5;
+    Player player = 6;
 }
 
 message Table {
@@ -40,45 +92,3 @@ message Player {
     string id = 1;
     string name = 2;
 }
-
-message CloseSessionRequest {}
-message CloseSessionResponse {}
-
-// table
-message CreateTableRequest {
-    string unit_type = 1;
-    uint32 bet = 2;
-}
-
-message CreateTableResponse {
-    string table_id = 1;
-    string unit_type = 2;
-    uint32 bet = 3;
-}
-
-message JoinTableRequest {
-    string table_id = 1;
-}
-
-message JoinTableResponse {
-    Table table = 1;
-    // string table_id = 1;
-    // string unit_type = 2;
-    // uint32 bet = 3;
-    // repeated Participant participants = 4;
-}
-
-message Participant {
-    string id = 1;
-    uint32 order = 2;
-    string cards = 3;
-    uint32 cards_count = 4;
-    Player player = 5;
-}
-
-message MakeMoveRequest {
-    string table_id = 1;
-    string card = 2;
-}
-
-message MakeMoveResponse{}
