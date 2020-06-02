@@ -6,6 +6,7 @@ service GameService {
 
     // Table requests
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
+    rpc GetOpenTables(GetOpenTablesRequest) returns (GetOpenTablesResponse);
     rpc JoinTable(JoinTableRequest) returns (JoinTableResponse);
     rpc BecomeParticipant(BecomeParticipantRequest) returns (BecomeParticipantResponse);
     rpc Ready(ReadyRequest) returns (ReadyResponse);
@@ -19,7 +20,7 @@ message OpenSessionRequest {
 message OpenSessionResponse {
     string session_id = 1;
     string player_id = 2;
-    Table table = 3;
+    string table_id = 3;
 }
 
 message CloseSessionRequest {}
@@ -34,6 +35,11 @@ message CreateTableResponse {
     string table_id = 1;
     string unit_type = 2;
     uint32 bet = 3;
+}
+
+message GetOpenTablesRequest {}
+message GetOpenTablesResponse {
+    repeated Table tables = 1;
 }
 
 message JoinTableRequest {

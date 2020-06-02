@@ -24,6 +24,7 @@ func NewApiService(authsvc authpb.AuthServiceClient, gamesvc gamepb.GameServiceC
 
 	// table handlers
 	svc.router.Register("CreateTable", &gamepb.CreateTableRequest{}, svc.CreateTable)
+	svc.router.Register("GetOpenTables", &gamepb.GetOpenTablesRequest{}, svc.GetOpenTables)
 	svc.router.Register("JoinTable", &gamepb.JoinTableRequest{}, svc.JoinTable)
 	svc.router.Register("BecomeParticipant", &gamepb.BecomeParticipantRequest{}, svc.BecomeParticipant)
 	svc.router.Register("Ready", &gamepb.ReadyRequest{}, svc.Ready)

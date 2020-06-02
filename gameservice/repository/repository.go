@@ -14,6 +14,7 @@ type GameRepository interface {
 	CreateSession(context.Context, *model.Session) error
 	GetOpenedSessionForRemote(context.Context, string) (*model.Session, error)
 	CreateTable(context.Context, string, string, uint32) (*model.Table, error)
+	GetOpenTables(context.Context) ([]*model.Table, error)
 	FindTable(context.Context, string) (*model.Table, error)
 	TableReadyCount(context.Context, string) (int, error)
 	FindTableWithPlayer(context.Context, string) (*model.Table, error)

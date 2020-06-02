@@ -53,7 +53,7 @@ type PlayerJoined struct {
 type PlayerLeaved struct {
 	Event         string `json:"event"`
 	TableId       string `json:"table_id"`
-	ParticiapntId string `json:"participant_id"`
+	ParticipantId string `json:"participant_id"`
 	PlayerId      string `json:"player_id"`
 }
 

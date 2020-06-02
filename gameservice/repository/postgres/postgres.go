@@ -126,6 +126,19 @@ func (r *pgGameRepository) CreateSession(ctx context.Context, session *model.Ses
 	return err
 }
 
+func (r *pgGameRepository) GetOpenTables(ctx context.Context) ([]*model.Table, error) {
+	tables := []*model.Table{}
+	err := r.DB.ModelContext(ctx, &tables).
+		Where(`end_time IS NULL`).
+		Select()
+
+	if err != nil {
+		r.logger.For(ctx).Error(err)
+	}
+
+	return tables, err
+}
+
 func (r *pgGameRepository) GetOpenedSessionForRemote(ctx context.Context, remote string) (*model.Session, error) {
 	session := &model.Session{}
 	err := r.DB.ModelContext(ctx, session).

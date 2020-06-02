@@ -170,14 +170,14 @@ func (s *proxyServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 type responseWrapper struct {
-	*apipb.Request
+	*apipb.Response
 	Code    uint32 `json:"code"`
 	Message string `json:"message"`
 }
 
 func responseWithError(wsocket *socket, req *apipb.Request, err error) ([]byte, error) {
 	res := &responseWrapper{
-		Request: &apipb.Request{
+		Response: &apipb.Response{
 			Key:  req.Key,
 			Type: req.Type,
 		},

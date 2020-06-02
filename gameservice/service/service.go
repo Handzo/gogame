@@ -113,54 +113,60 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 		return nil, err
 	}
 
+	// response :=
+
+	// // if player at the table
+	// if table != nil && table.Signature != "" {
+	// 	sig, err := enginesig.Parse(table.Signature)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	tableData := &pb.Table{
+	// 		Id:           table.Id,
+	// 		Trump:        sig.Trump,
+	// 		Turn:         uint32(sig.Turn + 1),
+	// 		TableCards:   sig.TableCards,
+	// 		ClubPlayer:   uint32(sig.ClubPlayer + 1),
+	// 		Dealer:       uint32(sig.Dealer + 1),
+	// 		Team_1Score:  uint32(sig.Team1Scores),
+	// 		Team_2Score:  uint32(sig.Team2Scores),
+	// 		Team_1Total:  uint32(sig.Team1Total),
+	// 		Team_2Total:  uint32(sig.Team2Total),
+	// 		Participants: make([]*pb.Participant, 4),
+	// 	}
+
+	// 	// remove cards of other players
+	// 	for _, p := range table.Participants {
+	// 		o := p.Order - 1
+	// 		tableData.Participants[o] = &pb.Participant{
+	// 			Id:         p.Id,
+	// 			Order:      uint32(p.Order),
+	// 			CardsCount: uint32(len(sig.PlayerCards[o]) / 2),
+	// 		}
+	// 		if p.PlayerId != "" {
+	// 			tableData.Participants[o].Player = &pb.Player{
+	// 				Id:   p.Player.Id,
+	// 				Name: p.Player.Name,
+	// 			}
+	// 			if p.PlayerId == player.Id {
+	// 				tableData.Participants[o].Cards = sig.PlayerCards[o]
+	// 			}
+	// 		}
+	// 	}
+
+	// 	g.pubsub.AddToRoom(ctx, table.Id, session.PlayerId)
+
+	// 	response.Table = tableData
+	// }
+
 	response := &pb.OpenSessionResponse{
 		SessionId: session.Id,
 		PlayerId:  session.PlayerId,
 	}
 
-	// if player at the table
-	if table != nil && table.Signature != "" {
-		sig, err := enginesig.Parse(table.Signature)
-		if err != nil {
-			return nil, err
-		}
-
-		tableData := &pb.Table{
-			Id:           table.Id,
-			Trump:        sig.Trump,
-			Turn:         uint32(sig.Turn + 1),
-			TableCards:   sig.TableCards,
-			ClubPlayer:   uint32(sig.ClubPlayer + 1),
-			Dealer:       uint32(sig.Dealer + 1),
-			Team_1Score:  uint32(sig.Team1Scores),
-			Team_2Score:  uint32(sig.Team2Scores),
-			Team_1Total:  uint32(sig.Team1Total),
-			Team_2Total:  uint32(sig.Team2Total),
-			Participants: make([]*pb.Participant, 4),
-		}
-
-		// remove cards of other players
-		for _, p := range table.Participants {
-			o := p.Order - 1
-			tableData.Participants[o] = &pb.Participant{
-				Id:         p.Id,
-				Order:      uint32(p.Order),
-				CardsCount: uint32(len(sig.PlayerCards[o]) / 2),
-			}
-			if p.PlayerId != "" {
-				tableData.Participants[o].Player = &pb.Player{
-					Id:   p.Player.Id,
-					Name: p.Player.Name,
-				}
-				if p.PlayerId == player.Id {
-					tableData.Participants[o].Cards = sig.PlayerCards[o]
-				}
-			}
-		}
-
-		g.pubsub.AddToRoom(ctx, table.Id, session.PlayerId)
-
-		response.Table = tableData
+	if table != nil {
+		response.TableId = table.Id
 	}
 
 	return response, nil
@@ -245,7 +251,7 @@ func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) 
 
 		room.Publish(ctx, &pubsub.ParticipantStateChanged{
 			Event: "ParticipantStateChanged",
-			Participant: &pubsub.Participant{
+			Participant: pubsub.Participant{
 				Id:    p.Id,
 				Order: p.Order,
 				State: string(p.State),
@@ -268,6 +274,27 @@ func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableReques
 	return &pb.CreateTableResponse{
 		TableId: table.Id,
 		Bet:     table.Bet,
+	}, nil
+}
+
+func (g *gameService) GetOpenTables(ctx context.Context, req *pb.GetOpenTablesRequest) (*pb.GetOpenTablesResponse, error) {
+	g.logger.Bg().Info("get open tables")
+	tables, err := g.repo.GetOpenTables(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	ts := make([]*pb.Table, len(tables))
+
+	for i, t := range tables {
+		ts[i] = &pb.Table{
+			Id:  t.Id,
+			Bet: t.Bet,
+		}
+	}
+
+	return &pb.GetOpenTablesResponse{
+		Tables: ts,
 	}, nil
 }
 

@@ -18,6 +18,10 @@ func (this apiService) CreateTable(ctx context.Context, req interface{}) (interf
 	return this.gamesvc.CreateTable(ctx, req.(*gamepb.CreateTableRequest))
 }
 
+func (this apiService) GetOpenTables(ctx context.Context, req interface{}) (interface{}, error) {
+	return this.gamesvc.GetOpenTables(ctx, req.(*gamepb.GetOpenTablesRequest))
+}
+
 func (this apiService) JoinTable(ctx context.Context, req interface{}) (interface{}, error) {
 	return this.gamesvc.JoinTable(ctx, req.(*gamepb.JoinTableRequest))
 }
