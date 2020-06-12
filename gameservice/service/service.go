@@ -84,8 +84,8 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 	}
 
 	player := &model.Player{
-		UserId: res.UserId,
-		Name:   res.Username,
+		UserId:   res.UserId,
+		Nickname: res.Username,
 	}
 
 	// select player or create new
@@ -113,56 +113,15 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 		return nil, err
 	}
 
-	// response :=
-
-	// // if player at the table
-	// if table != nil && table.Signature != "" {
-	// 	sig, err := enginesig.Parse(table.Signature)
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	tableData := &pb.Table{
-	// 		Id:           table.Id,
-	// 		Trump:        sig.Trump,
-	// 		Turn:         uint32(sig.Turn + 1),
-	// 		TableCards:   sig.TableCards,
-	// 		ClubPlayer:   uint32(sig.ClubPlayer + 1),
-	// 		Dealer:       uint32(sig.Dealer + 1),
-	// 		Team_1Score:  uint32(sig.Team1Scores),
-	// 		Team_2Score:  uint32(sig.Team2Scores),
-	// 		Team_1Total:  uint32(sig.Team1Total),
-	// 		Team_2Total:  uint32(sig.Team2Total),
-	// 		Participants: make([]*pb.Participant, 4),
-	// 	}
-
-	// 	// remove cards of other players
-	// 	for _, p := range table.Participants {
-	// 		o := p.Order - 1
-	// 		tableData.Participants[o] = &pb.Participant{
-	// 			Id:         p.Id,
-	// 			Order:      uint32(p.Order),
-	// 			CardsCount: uint32(len(sig.PlayerCards[o]) / 2),
-	// 		}
-	// 		if p.PlayerId != "" {
-	// 			tableData.Participants[o].Player = &pb.Player{
-	// 				Id:   p.Player.Id,
-	// 				Name: p.Player.Name,
-	// 			}
-	// 			if p.PlayerId == player.Id {
-	// 				tableData.Participants[o].Cards = sig.PlayerCards[o]
-	// 			}
-	// 		}
-	// 	}
-
-	// 	g.pubsub.AddToRoom(ctx, table.Id, session.PlayerId)
-
-	// 	response.Table = tableData
-	// }
-
 	response := &pb.OpenSessionResponse{
 		SessionId: session.Id,
-		PlayerId:  session.PlayerId,
+		Player: &pb.Player{
+			Id:       player.Id,
+			Nickname: player.Nickname,
+			Nuts:     player.Nuts,
+			Gold:     player.Gold,
+			Avatar:   player.Avatar,
+		},
 	}
 
 	if table != nil {
@@ -210,6 +169,21 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 	return nil
 }
 
+func (g *gameService) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+	request := &authpb.ChangePasswordRequest{
+		UserId:      ctx.Value("player_id").(string),
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
+	}
+
+	_, err := g.authsvc.ChangePassword(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pb.ChangePasswordResponse{}, nil
+}
+
 func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) error {
 	// remove from table if game has not been started
 	participants, err := g.repo.GetParticipantsForPlayer(ctx, playerId)
@@ -225,7 +199,7 @@ func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) 
 	}
 
 	for _, p := range participants {
-		if p.Table.StartTime.IsZero() {
+		if !p.Table.IsOpen() {
 			p.State = model.FREE
 		} else {
 			p.State = model.DISCONNECT
@@ -340,7 +314,7 @@ func (g *gameService) BecomeParticipant(ctx context.Context, req *pb.BecomeParti
 	player := &model.Player{}
 	player.Id = playerId
 
-	err = g.repo.Select(ctx, player, "id", "name")
+	err = g.repo.Select(ctx, player, "id", "nickname")
 	if err != nil {
 		return nil, err
 	}
@@ -360,8 +334,8 @@ func (g *gameService) BecomeParticipant(ctx context.Context, req *pb.BecomeParti
 			Id:    participant.Id,
 			State: string(participant.State),
 			Player: pubsub.Player{
-				Id:   participant.Player.Id,
-				Name: participant.Player.Name,
+				Id:       participant.Player.Id,
+				Nickname: participant.Player.Nickname,
 			},
 		},
 	})
@@ -393,7 +367,7 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 	player := &model.Player{}
 	player.Id = playerId
 
-	err = g.repo.Select(ctx, player, "id", "name")
+	err = g.repo.Select(ctx, player, "id", "nickname")
 	if err != nil {
 		return nil, err
 	}
@@ -401,8 +375,8 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 	g.pubsub.Room(table.Id).Publish(ctx, pubsub.PlayerJoined{
 		Event: "PlayerJoined",
 		Player: pubsub.Player{
-			Id:   player.Id,
-			Name: player.Name,
+			Id:       player.Id,
+			Nickname: player.Nickname,
 		},
 	})
 
@@ -425,8 +399,8 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 					Order: p.Order,
 					State: string(p.State),
 					Player: pubsub.Player{
-						Id:   p.Player.Id,
-						Name: p.Player.Name,
+						Id:       p.Player.Id,
+						Nickname: p.Player.Nickname,
 					},
 				},
 			})
@@ -447,8 +421,8 @@ func (g *gameService) JoinTable(ctx context.Context, req *pb.JoinTableRequest) (
 		}
 		if p.PlayerId != "" {
 			tableData.Participants[o].Player = &pb.Player{
-				Id:   p.Player.Id,
-				Name: p.Player.Name,
+				Id:       p.Player.Id,
+				Nickname: p.Player.Nickname,
 			}
 		}
 	}
@@ -491,7 +465,7 @@ func (g *gameService) Ready(ctx context.Context, req *pb.ReadyRequest) (*pb.Read
 	participant := &model.Participant{}
 	participant.Id = req.ParticipantId
 
-	if err := g.repo.Select(ctx, participant, "state", "table_id"); err != nil {
+	if err := g.repo.Select(ctx, participant, "state", "table_id", "order"); err != nil {
 		return nil, err
 	}
 
@@ -538,13 +512,8 @@ func (g *gameService) MakeMove(ctx context.Context, req *pb.MakeMoveRequest) (*p
 	}
 
 	// table has not beed started
-	if table.StartTime.IsZero() {
+	if !table.IsOpen() {
 		return nil, code.TableNotStarted
-	}
-
-	// table already closed
-	if !table.EndTime.IsZero() {
-		return nil, code.TableClosed
 	}
 
 	dealOrder, err := g.repo.FindCurrentDealOrderForTable(ctx, req.TableId)
@@ -614,7 +583,7 @@ func (g *gameService) startGame(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	if !table.StartTime.IsZero() {
+	if table.IsOpen() {
 		return code.TableAlreadyStarted
 	}
 
@@ -648,13 +617,8 @@ func (g *gameService) startRound(ctx context.Context, task *rmq.Task) error {
 	}
 
 	// table has not beed started
-	if table.StartTime.IsZero() {
+	if !table.IsOpen() {
 		return code.TableNotStarted
-	}
-
-	// table already closed
-	if !table.EndTime.IsZero() {
-		return code.TableClosed
 	}
 
 	logger.Info("Send request to game engine for new round signature")
@@ -716,8 +680,8 @@ func (g *gameService) startRound(ctx context.Context, task *rmq.Task) error {
 		}
 		if p.PlayerId != "" {
 			tableData.Participants[i].Player = pubsub.Player{
-				Id:   p.Player.Id,
-				Name: p.Player.Name,
+				Id:       p.Player.Id,
+				Nickname: p.Player.Nickname,
 			}
 		}
 	}
@@ -752,13 +716,8 @@ func (g *gameService) startDeal(ctx context.Context, task *rmq.Task) error {
 	}
 
 	// table has not beed started
-	if table.StartTime.IsZero() {
+	if !table.IsOpen() {
 		return code.TableNotStarted
-	}
-
-	// table already closed
-	if !table.EndTime.IsZero() {
-		return code.TableClosed
 	}
 
 	logger.Info("Get currrent round")
@@ -794,13 +753,8 @@ func (g *gameService) nextMove(ctx context.Context, task *rmq.Task) error {
 	}
 
 	// table has not beed started
-	if table.StartTime.IsZero() {
+	if !table.IsOpen() {
 		return code.TableNotStarted
-	}
-
-	// table already closed
-	if !table.EndTime.IsZero() {
-		return code.TableClosed
 	}
 
 	logger.Info("Get current deal order")
@@ -898,12 +852,8 @@ func (g *gameService) finishRound(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	if table.StartTime.IsZero() {
+	if !table.IsOpen() {
 		return code.TableNotStarted
-	}
-
-	if !table.EndTime.IsZero() {
-		return code.TableClosed
 	}
 
 	round, err := g.repo.FindCurrentRoundForTable(ctx, table.Id)

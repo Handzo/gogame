@@ -3,6 +3,7 @@ syntax = "proto3";
 service GameService {
     rpc OpenSession(OpenSessionRequest) returns (OpenSessionResponse);
     rpc CloseSession(CloseSessionRequest) returns (CloseSessionResponse);
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 
     // Table requests
     rpc CreateTable(CreateTableRequest) returns (CreateTableResponse);
@@ -19,12 +20,19 @@ message OpenSessionRequest {
 
 message OpenSessionResponse {
     string session_id = 1;
-    string player_id = 2;
+    Player player = 2;
     string table_id = 3;
 }
 
 message CloseSessionRequest {}
 message CloseSessionResponse {}
+
+message ChangePasswordRequest {
+    string old_password = 1;
+    string new_password = 2;
+}
+
+message ChangePasswordResponse{}
 
 message CreateTableRequest {
     string unit_type = 1;
@@ -96,5 +104,8 @@ message Table {
 
 message Player {
     string id = 1;
-    string name = 2;
+    string nickname = 2;
+    uint64 nuts = 3;
+    uint64 gold = 4;
+    string avatar = 5;
 }

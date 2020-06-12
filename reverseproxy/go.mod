@@ -9,6 +9,7 @@ replace github.com/Handzo/gogame/apigateway => ../apigateway
 require (
 	github.com/Handzo/gogame/apigateway v0.0.0-00010101000000-000000000000
 	github.com/Handzo/gogame/common v0.0.0-00010101000000-000000000000
+	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
 	github.com/go-redis/redis v6.15.7+incompatible
 	github.com/golang/protobuf v1.4.2

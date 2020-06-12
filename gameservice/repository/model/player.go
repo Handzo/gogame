@@ -7,11 +7,14 @@ import (
 
 type Player struct {
 	basemodel.BaseModel
-	UserId   string `pg:",notnull,type:uuid"`
-	Name     string `pg:",unique,notnull"`
-	Balance  uint64 `pg:",notnull,default:10000"`
-	Avatar   string
-	Sessions []*Session `pg:"fk:player_id"`
+	UserId       string `pg:",notnull,type:uuid"`
+	Nickname     string `pg:",unique,notnull"`
+	Nuts         uint64 `pg:",notnull,default:0"`
+	Gold         uint64 `pg:",notnull,default:0"`
+	Avatar       string
+	PlayerInfoId string `pg:",type:uuid"`
+	PlayerInfo   *PlayerInfo
+	Sessions     []*Session `pg:"fk:player_id"`
 }
 
 func (Player) Prepare(*pg.DB, bool) error {

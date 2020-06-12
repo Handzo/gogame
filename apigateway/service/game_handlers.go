@@ -14,6 +14,10 @@ func (this apiService) CloseSession(ctx context.Context, req interface{}) (inter
 	return this.gamesvc.CloseSession(ctx, req.(*gamepb.CloseSessionRequest))
 }
 
+func (this apiService) ChangePassword(ctx context.Context, req interface{}) (interface{}, error) {
+	return this.gamesvc.ChangePassword(ctx, req.(*gamepb.ChangePasswordRequest))
+}
+
 func (this apiService) CreateTable(ctx context.Context, req interface{}) (interface{}, error) {
 	return this.gamesvc.CreateTable(ctx, req.(*gamepb.CreateTableRequest))
 }

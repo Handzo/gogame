@@ -39,3 +39,7 @@ func (t Table) HasEmptyPlaces() bool {
 
 	return false
 }
+
+func (t Table) IsOpen() bool {
+	return !t.StartTime.IsZero() && t.EndTime.IsZero()
+}

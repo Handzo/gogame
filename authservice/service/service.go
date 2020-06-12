@@ -38,11 +38,12 @@ func NewService(tracer opentracing.Tracer, metricsFactory metrics.Factory, logge
 }
 
 func (s *authService) SignUp(ctx context.Context, req *pb.SignUpRequest) (*pb.SignUpResponse, error) {
-	if req.Username == "" || req.Password == "" {
+	if req.Username == "" || req.Password == "" || req.Email == "" {
 		return nil, code.InvalidAuthInfo
 	}
 
 	user := &model.User{
+		Email:    req.Email,
 		Username: req.Username,
 		Password: req.Password,
 	}
@@ -88,9 +89,9 @@ func (s *authService) SignIn(ctx context.Context, req *pb.SignInRequest) (*pb.Si
 	}, nil
 }
 
-func (s *authService) GetUserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
-	return &pb.UserInfoResponse{}, nil
-}
+// func (s *authService) GetUserInfo(ctx context.Context, req *pb.UserInfoRequest) (*pb.UserInfoResponse, error) {
+// 	return &pb.UserInfoResponse{}, nil
+// }
 
 func (s *authService) Validate(ctx context.Context, req *pb.ValidateRequest) (*pb.ValidateResponse, error) {
 	token, _ := jwt.ParseWithClaims(req.Token, &AuthClaims{}, func(*jwt.Token) (interface{}, error) {
@@ -119,4 +120,68 @@ func (s *authService) GetToken(ctx context.Context, userId, username string) (st
 	})
 
 	return jwttoken.SignedString(key)
+}
+
+func (s *authService) GetVerificationCode(ctx context.Context, req *pb.GetVerificationCodeRequest) (*pb.GetVerificationCodeResponse, error) {
+	user, err := s.repo.GetUserByEmail(ctx, req.Email)
+	if err != nil {
+		return nil, err
+	}
+
+	code, err := s.repo.CreateVerificationCode(ctx, user)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: send to email
+	return &pb.GetVerificationCodeResponse{
+		Code: code.Code,
+	}, nil
+}
+
+func (s *authService) ResetPassword(ctx context.Context, req *pb.ResetPasswordRequest) (*pb.ResetPasswordResponse, error) {
+	// TODO: validate password
+
+	c, err := s.repo.GetVerificationCode(ctx, req.Code)
+	if err != nil {
+		return nil, code.InvalidVerificationCode
+	}
+
+	user := &model.User{}
+	user.Id = c.UserId
+
+	if err = s.repo.Select(ctx, user, "password"); err != nil {
+		return nil, err
+	}
+
+	user.Password = req.NewPassword
+	user.HashPassword()
+
+	if err = s.repo.Update(ctx, user, "password"); err != nil {
+		return nil, err
+	}
+
+	return &pb.ResetPasswordResponse{}, nil
+}
+
+func (s *authService) ChangePassword(ctx context.Context, req *pb.ChangePasswordRequest) (*pb.ChangePasswordResponse, error) {
+	user := &model.User{}
+	user.Id = req.UserId
+
+	if err := s.repo.Select(ctx, user); err != nil {
+		return nil, code.UserNotFound
+	}
+
+	if !user.ValidPassword(req.OldPassword) {
+		return nil, code.InvalidPassword
+	}
+
+	user.Password = req.NewPassword
+	user.HashPassword()
+
+	if err := s.repo.Update(ctx, user, "password"); err != nil {
+		return nil, err
+	}
+
+	return &pb.ChangePasswordResponse{}, nil
 }

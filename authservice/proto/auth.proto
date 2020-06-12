@@ -3,13 +3,16 @@ syntax = "proto3";
 service AuthService {
     rpc SignUp(SignUpRequest) returns (SignUpResponse);
     rpc SignIn(SignInRequest) returns (SignInResponse);
-    // rpc GetUserInfo(UserInfoRequest) returns (UserInfoResponse);
     rpc Validate(ValidateRequest) returns (ValidateResponse);
+    rpc GetVerificationCode(GetVerificationCodeRequest) returns (GetVerificationCodeResponse);
+    rpc ResetPassword(ResetPasswordRequest) returns (ResetPasswordResponse);
+    rpc ChangePassword(ChangePasswordRequest) returns (ChangePasswordResponse);
 }
 
 message SignUpRequest {
-    string username = 1;
-    string password = 2;
+    string email = 1;
+    string username = 2;
+    string password = 3;
 }
 
 message SignUpResponse {
@@ -25,14 +28,14 @@ message SignInResponse {
     string token = 1;
 }
 
-message UserInfoRequest{
-    string token = 1;
-}
+// message UserInfoRequest{
+//     string token = 1;
+// }
 
-message UserInfoResponse {
-    string user_id = 1;
-    string username = 2;
-}
+// message UserInfoResponse {
+//     string user_id = 1;
+//     string username = 2;
+// }
 
 message ValidateRequest {
     string token = 1;
@@ -42,3 +45,26 @@ message ValidateResponse {
     string user_id = 1;
     string username = 2;
 }
+
+message GetVerificationCodeRequest {
+    string email = 1;
+}
+
+message GetVerificationCodeResponse {
+    string code = 1;
+}
+
+message ResetPasswordRequest {
+    string code = 1;
+    string new_password = 2;
+}
+
+message ResetPasswordResponse {}
+
+message ChangePasswordRequest {
+    string user_id = 1;
+    string old_password = 2;
+    string new_password = 3;
+}
+
+message ChangePasswordResponse {}

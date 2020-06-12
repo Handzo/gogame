@@ -6,6 +6,7 @@ replace github.com/Handzo/gogame/common => ../common
 
 require (
 	github.com/Handzo/gogame/common v0.0.0-00010101000000-000000000000
+	github.com/codahale/hdrhistogram v0.0.0-20161010025455-3a0bb77429bd // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-pg/pg/v9 v9.1.6
 	github.com/golang/protobuf v1.4.2

@@ -26,6 +26,9 @@ func (d dbLogger) BeforeQuery(ctx context.Context, q *pg.QueryEvent) (context.Co
 		span = d.tracer.StartSpan("QUERY", opentracing.ChildOf(span.Context()))
 		tags.SpanKindRPCClient.Set(span)
 		tags.PeerService.Set(span, "pg")
+		query, _ := q.FormattedQuery()
+		span.LogFields(log.String("query", query))
+		span.SetTag("query", "pg")
 		ctx = opentracing.ContextWithSpan(ctx, span)
 	}
 	return ctx, nil
@@ -33,9 +36,6 @@ func (d dbLogger) BeforeQuery(ctx context.Context, q *pg.QueryEvent) (context.Co
 
 func (d dbLogger) AfterQuery(ctx context.Context, q *pg.QueryEvent) error {
 	if span := opentracing.SpanFromContext(ctx); span != nil {
-		query, _ := q.FormattedQuery()
-		span.LogFields(log.String("query", query))
-		span.SetTag("query", "pg")
 		span.Finish()
 	}
 	fmt.Println(q.FormattedQuery())

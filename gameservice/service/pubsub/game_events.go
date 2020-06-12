@@ -86,6 +86,6 @@ type Participant struct {
 }
 
 type Player struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id       string `json:"id"`
+	Nickname string `json:"nickname"`
 }

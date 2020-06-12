@@ -39,6 +39,7 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 	DB.AddQueryHook(basemodel.NewDBLogger(tracer))
 
 	tables := []basemodel.Model{
+		&model.PlayerInfo{},
 		&model.Player{},
 		&model.Session{},
 		&model.Unit{},
@@ -49,11 +50,13 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 		&model.DealOrder{},
 	}
 
-	if err := basemodel.Sync(DB, tables, false); err != nil {
+	force := true
+
+	if err := basemodel.Sync(DB, tables, force); err != nil {
 		panic(err)
 	}
 
-	if err := (&model.Unit{}).Populate(DB, false); err != nil {
+	if err := (&model.Unit{}).Populate(DB, force); err != nil {
 		panic(err)
 	}
 
@@ -104,11 +107,22 @@ func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *mod
 	// 	SelectOrInsert(player)
 	created, err := r.DB.ModelContext(ctx, player).
 		Where(`user_id = ?user_id`).
+		// Relation(`Profile`).
 		Relation(`Sessions`, func(q *orm.Query) (*orm.Query, error) {
 			return q.Where(`closed_at IS NULL`), nil
 		}).
 		OnConflict(`DO NOTHING`).
 		SelectOrInsert(player)
+
+	// r.logger.For(ctx).Info(player.Profile)
+	// if player.Profile == nil {
+	// 	profile := &model.Profile{}
+	// 	if _, err = r.DB.ModelContext(ctx, profile).Insert(profile); err != nil {
+	// 		return false, err
+	// 	}
+	// 	player.Profile = profile
+	// 	player.ProfileId = profile.Id
+	// }
 
 	if err != nil {
 		r.logger.For(ctx).Error(err)

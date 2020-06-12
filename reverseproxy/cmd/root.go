@@ -76,7 +76,7 @@ var rootCmd = &cobra.Command{
 		proxy := server.NewProxyServer(apisvc, rdb, logger, tracer)
 
 		s := &http.Server{
-			Addr:    net.JoinHostPort("localhost", fmt.Sprintf("%d", port)),
+			Addr:    net.JoinHostPort("192.168.0.16", fmt.Sprintf("%d", port)),
 			Handler: proxy,
 		}
 

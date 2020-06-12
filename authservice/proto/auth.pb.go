@@ -23,8 +23,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type SignUpRequest struct {
-	Username             string   `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
-	Password             string   `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	Email                string   `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	Username             string   `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Password             string   `protobuf:"bytes,3,opt,name=password,proto3" json:"password,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -54,6 +55,13 @@ func (m *SignUpRequest) XXX_DiscardUnknown() {
 }
 
 var xxx_messageInfo_SignUpRequest proto.InternalMessageInfo
+
+func (m *SignUpRequest) GetEmail() string {
+	if m != nil {
+		return m.Email
+	}
+	return ""
+}
 
 func (m *SignUpRequest) GetUsername() string {
 	if m != nil {
@@ -194,92 +202,6 @@ func (m *SignInResponse) GetToken() string {
 	return ""
 }
 
-type UserInfoRequest struct {
-	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UserInfoRequest) Reset()         { *m = UserInfoRequest{} }
-func (m *UserInfoRequest) String() string { return proto.CompactTextString(m) }
-func (*UserInfoRequest) ProtoMessage()    {}
-func (*UserInfoRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a9d38a2cdbb4f144, []int{4}
-}
-
-func (m *UserInfoRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UserInfoRequest.Unmarshal(m, b)
-}
-func (m *UserInfoRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UserInfoRequest.Marshal(b, m, deterministic)
-}
-func (m *UserInfoRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UserInfoRequest.Merge(m, src)
-}
-func (m *UserInfoRequest) XXX_Size() int {
-	return xxx_messageInfo_UserInfoRequest.Size(m)
-}
-func (m *UserInfoRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_UserInfoRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UserInfoRequest proto.InternalMessageInfo
-
-func (m *UserInfoRequest) GetToken() string {
-	if m != nil {
-		return m.Token
-	}
-	return ""
-}
-
-type UserInfoResponse struct {
-	UserId               string   `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
-	Username             string   `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *UserInfoResponse) Reset()         { *m = UserInfoResponse{} }
-func (m *UserInfoResponse) String() string { return proto.CompactTextString(m) }
-func (*UserInfoResponse) ProtoMessage()    {}
-func (*UserInfoResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a9d38a2cdbb4f144, []int{5}
-}
-
-func (m *UserInfoResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_UserInfoResponse.Unmarshal(m, b)
-}
-func (m *UserInfoResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_UserInfoResponse.Marshal(b, m, deterministic)
-}
-func (m *UserInfoResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_UserInfoResponse.Merge(m, src)
-}
-func (m *UserInfoResponse) XXX_Size() int {
-	return xxx_messageInfo_UserInfoResponse.Size(m)
-}
-func (m *UserInfoResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_UserInfoResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_UserInfoResponse proto.InternalMessageInfo
-
-func (m *UserInfoResponse) GetUserId() string {
-	if m != nil {
-		return m.UserId
-	}
-	return ""
-}
-
-func (m *UserInfoResponse) GetUsername() string {
-	if m != nil {
-		return m.Username
-	}
-	return ""
-}
-
 type ValidateRequest struct {
 	Token                string   `protobuf:"bytes,1,opt,name=token,proto3" json:"token,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
@@ -291,7 +213,7 @@ func (m *ValidateRequest) Reset()         { *m = ValidateRequest{} }
 func (m *ValidateRequest) String() string { return proto.CompactTextString(m) }
 func (*ValidateRequest) ProtoMessage()    {}
 func (*ValidateRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a9d38a2cdbb4f144, []int{6}
+	return fileDescriptor_a9d38a2cdbb4f144, []int{4}
 }
 
 func (m *ValidateRequest) XXX_Unmarshal(b []byte) error {
@@ -331,7 +253,7 @@ func (m *ValidateResponse) Reset()         { *m = ValidateResponse{} }
 func (m *ValidateResponse) String() string { return proto.CompactTextString(m) }
 func (*ValidateResponse) ProtoMessage()    {}
 func (*ValidateResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_a9d38a2cdbb4f144, []int{7}
+	return fileDescriptor_a9d38a2cdbb4f144, []int{5}
 }
 
 func (m *ValidateResponse) XXX_Unmarshal(b []byte) error {
@@ -366,37 +288,293 @@ func (m *ValidateResponse) GetUsername() string {
 	return ""
 }
 
+type GetVerificationCodeRequest struct {
+	Email                string   `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetVerificationCodeRequest) Reset()         { *m = GetVerificationCodeRequest{} }
+func (m *GetVerificationCodeRequest) String() string { return proto.CompactTextString(m) }
+func (*GetVerificationCodeRequest) ProtoMessage()    {}
+func (*GetVerificationCodeRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{6}
+}
+
+func (m *GetVerificationCodeRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVerificationCodeRequest.Unmarshal(m, b)
+}
+func (m *GetVerificationCodeRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVerificationCodeRequest.Marshal(b, m, deterministic)
+}
+func (m *GetVerificationCodeRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVerificationCodeRequest.Merge(m, src)
+}
+func (m *GetVerificationCodeRequest) XXX_Size() int {
+	return xxx_messageInfo_GetVerificationCodeRequest.Size(m)
+}
+func (m *GetVerificationCodeRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVerificationCodeRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVerificationCodeRequest proto.InternalMessageInfo
+
+func (m *GetVerificationCodeRequest) GetEmail() string {
+	if m != nil {
+		return m.Email
+	}
+	return ""
+}
+
+type GetVerificationCodeResponse struct {
+	Code                 string   `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *GetVerificationCodeResponse) Reset()         { *m = GetVerificationCodeResponse{} }
+func (m *GetVerificationCodeResponse) String() string { return proto.CompactTextString(m) }
+func (*GetVerificationCodeResponse) ProtoMessage()    {}
+func (*GetVerificationCodeResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{7}
+}
+
+func (m *GetVerificationCodeResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_GetVerificationCodeResponse.Unmarshal(m, b)
+}
+func (m *GetVerificationCodeResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_GetVerificationCodeResponse.Marshal(b, m, deterministic)
+}
+func (m *GetVerificationCodeResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_GetVerificationCodeResponse.Merge(m, src)
+}
+func (m *GetVerificationCodeResponse) XXX_Size() int {
+	return xxx_messageInfo_GetVerificationCodeResponse.Size(m)
+}
+func (m *GetVerificationCodeResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_GetVerificationCodeResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_GetVerificationCodeResponse proto.InternalMessageInfo
+
+func (m *GetVerificationCodeResponse) GetCode() string {
+	if m != nil {
+		return m.Code
+	}
+	return ""
+}
+
+type ResetPasswordRequest struct {
+	Code                 string   `protobuf:"bytes,1,opt,name=code,proto3" json:"code,omitempty"`
+	NewPassword          string   `protobuf:"bytes,2,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ResetPasswordRequest) Reset()         { *m = ResetPasswordRequest{} }
+func (m *ResetPasswordRequest) String() string { return proto.CompactTextString(m) }
+func (*ResetPasswordRequest) ProtoMessage()    {}
+func (*ResetPasswordRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{8}
+}
+
+func (m *ResetPasswordRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ResetPasswordRequest.Unmarshal(m, b)
+}
+func (m *ResetPasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ResetPasswordRequest.Marshal(b, m, deterministic)
+}
+func (m *ResetPasswordRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResetPasswordRequest.Merge(m, src)
+}
+func (m *ResetPasswordRequest) XXX_Size() int {
+	return xxx_messageInfo_ResetPasswordRequest.Size(m)
+}
+func (m *ResetPasswordRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResetPasswordRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResetPasswordRequest proto.InternalMessageInfo
+
+func (m *ResetPasswordRequest) GetCode() string {
+	if m != nil {
+		return m.Code
+	}
+	return ""
+}
+
+func (m *ResetPasswordRequest) GetNewPassword() string {
+	if m != nil {
+		return m.NewPassword
+	}
+	return ""
+}
+
+type ResetPasswordResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ResetPasswordResponse) Reset()         { *m = ResetPasswordResponse{} }
+func (m *ResetPasswordResponse) String() string { return proto.CompactTextString(m) }
+func (*ResetPasswordResponse) ProtoMessage()    {}
+func (*ResetPasswordResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{9}
+}
+
+func (m *ResetPasswordResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ResetPasswordResponse.Unmarshal(m, b)
+}
+func (m *ResetPasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ResetPasswordResponse.Marshal(b, m, deterministic)
+}
+func (m *ResetPasswordResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ResetPasswordResponse.Merge(m, src)
+}
+func (m *ResetPasswordResponse) XXX_Size() int {
+	return xxx_messageInfo_ResetPasswordResponse.Size(m)
+}
+func (m *ResetPasswordResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ResetPasswordResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ResetPasswordResponse proto.InternalMessageInfo
+
+type ChangePasswordRequest struct {
+	UserId               string   `protobuf:"bytes,1,opt,name=user_id,json=userId,proto3" json:"user_id,omitempty"`
+	OldPassword          string   `protobuf:"bytes,2,opt,name=old_password,json=oldPassword,proto3" json:"old_password,omitempty"`
+	NewPassword          string   `protobuf:"bytes,3,opt,name=new_password,json=newPassword,proto3" json:"new_password,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChangePasswordRequest) Reset()         { *m = ChangePasswordRequest{} }
+func (m *ChangePasswordRequest) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordRequest) ProtoMessage()    {}
+func (*ChangePasswordRequest) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{10}
+}
+
+func (m *ChangePasswordRequest) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangePasswordRequest.Unmarshal(m, b)
+}
+func (m *ChangePasswordRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangePasswordRequest.Marshal(b, m, deterministic)
+}
+func (m *ChangePasswordRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordRequest.Merge(m, src)
+}
+func (m *ChangePasswordRequest) XXX_Size() int {
+	return xxx_messageInfo_ChangePasswordRequest.Size(m)
+}
+func (m *ChangePasswordRequest) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordRequest.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChangePasswordRequest proto.InternalMessageInfo
+
+func (m *ChangePasswordRequest) GetUserId() string {
+	if m != nil {
+		return m.UserId
+	}
+	return ""
+}
+
+func (m *ChangePasswordRequest) GetOldPassword() string {
+	if m != nil {
+		return m.OldPassword
+	}
+	return ""
+}
+
+func (m *ChangePasswordRequest) GetNewPassword() string {
+	if m != nil {
+		return m.NewPassword
+	}
+	return ""
+}
+
+type ChangePasswordResponse struct {
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
+}
+
+func (m *ChangePasswordResponse) Reset()         { *m = ChangePasswordResponse{} }
+func (m *ChangePasswordResponse) String() string { return proto.CompactTextString(m) }
+func (*ChangePasswordResponse) ProtoMessage()    {}
+func (*ChangePasswordResponse) Descriptor() ([]byte, []int) {
+	return fileDescriptor_a9d38a2cdbb4f144, []int{11}
+}
+
+func (m *ChangePasswordResponse) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_ChangePasswordResponse.Unmarshal(m, b)
+}
+func (m *ChangePasswordResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_ChangePasswordResponse.Marshal(b, m, deterministic)
+}
+func (m *ChangePasswordResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_ChangePasswordResponse.Merge(m, src)
+}
+func (m *ChangePasswordResponse) XXX_Size() int {
+	return xxx_messageInfo_ChangePasswordResponse.Size(m)
+}
+func (m *ChangePasswordResponse) XXX_DiscardUnknown() {
+	xxx_messageInfo_ChangePasswordResponse.DiscardUnknown(m)
+}
+
+var xxx_messageInfo_ChangePasswordResponse proto.InternalMessageInfo
+
 func init() {
 	proto.RegisterType((*SignUpRequest)(nil), "SignUpRequest")
 	proto.RegisterType((*SignUpResponse)(nil), "SignUpResponse")
 	proto.RegisterType((*SignInRequest)(nil), "SignInRequest")
 	proto.RegisterType((*SignInResponse)(nil), "SignInResponse")
-	proto.RegisterType((*UserInfoRequest)(nil), "UserInfoRequest")
-	proto.RegisterType((*UserInfoResponse)(nil), "UserInfoResponse")
 	proto.RegisterType((*ValidateRequest)(nil), "ValidateRequest")
 	proto.RegisterType((*ValidateResponse)(nil), "ValidateResponse")
+	proto.RegisterType((*GetVerificationCodeRequest)(nil), "GetVerificationCodeRequest")
+	proto.RegisterType((*GetVerificationCodeResponse)(nil), "GetVerificationCodeResponse")
+	proto.RegisterType((*ResetPasswordRequest)(nil), "ResetPasswordRequest")
+	proto.RegisterType((*ResetPasswordResponse)(nil), "ResetPasswordResponse")
+	proto.RegisterType((*ChangePasswordRequest)(nil), "ChangePasswordRequest")
+	proto.RegisterType((*ChangePasswordResponse)(nil), "ChangePasswordResponse")
 }
 
 func init() { proto.RegisterFile("proto/auth.proto", fileDescriptor_a9d38a2cdbb4f144) }
 
 var fileDescriptor_a9d38a2cdbb4f144 = []byte{
-	// 255 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x12, 0x28, 0x28, 0xca, 0x2f,
-	0xc9, 0xd7, 0x4f, 0x2c, 0x2d, 0xc9, 0xd0, 0x03, 0x33, 0x95, 0xdc, 0xb9, 0x78, 0x83, 0x33, 0xd3,
-	0xf3, 0x42, 0x0b, 0x82, 0x52, 0x0b, 0x4b, 0x53, 0x8b, 0x4b, 0x84, 0xa4, 0xb8, 0x38, 0x4a, 0x8b,
-	0x53, 0x8b, 0xf2, 0x12, 0x73, 0x53, 0x25, 0x18, 0x15, 0x18, 0x35, 0x38, 0x83, 0xe0, 0x7c, 0x90,
-	0x5c, 0x41, 0x62, 0x71, 0x71, 0x79, 0x7e, 0x51, 0x8a, 0x04, 0x13, 0x44, 0x0e, 0xc6, 0x57, 0x52,
-	0xe3, 0xe2, 0x83, 0x19, 0x54, 0x5c, 0x90, 0x9f, 0x57, 0x9c, 0x2a, 0x24, 0xc2, 0xc5, 0x5a, 0x92,
-	0x9f, 0x9d, 0x9a, 0x07, 0x35, 0x06, 0xc2, 0x81, 0x59, 0xe8, 0x99, 0x47, 0x25, 0x0b, 0x41, 0x06,
-	0xe1, 0xb5, 0x50, 0x9d, 0x8b, 0x3f, 0xb4, 0x38, 0xb5, 0xc8, 0x33, 0x2f, 0x2d, 0x1f, 0x66, 0x25,
-	0x2e, 0x97, 0x09, 0x20, 0x14, 0x42, 0x8d, 0x14, 0xe7, 0x62, 0x07, 0x39, 0x26, 0x3e, 0x33, 0x05,
-	0xaa, 0x96, 0x0d, 0xc4, 0xf5, 0x4c, 0x41, 0x71, 0x35, 0x13, 0xaa, 0xab, 0x41, 0x36, 0x86, 0x25,
-	0xe6, 0x64, 0xa6, 0x24, 0x96, 0xa4, 0x12, 0xb4, 0x11, 0xa1, 0x90, 0x02, 0x1b, 0x8d, 0xa6, 0x30,
-	0x72, 0x71, 0x3b, 0x96, 0x96, 0x64, 0x04, 0xa7, 0x16, 0x95, 0x65, 0x26, 0xa7, 0x0a, 0x69, 0x72,
-	0xb1, 0x41, 0x22, 0x43, 0x88, 0x4f, 0x0f, 0x25, 0x7a, 0xa5, 0xf8, 0xf5, 0xd0, 0x62, 0x09, 0xaa,
-	0xd4, 0x33, 0x0f, 0xaa, 0x14, 0x1e, 0x31, 0x50, 0xa5, 0x48, 0xe1, 0xab, 0xcf, 0xc5, 0x01, 0x73,
-	0xae, 0x90, 0x80, 0x1e, 0x9a, 0x17, 0xa5, 0x04, 0xf5, 0xd0, 0xfd, 0x92, 0xc4, 0x06, 0x4e, 0x63,
-	0xc6, 0x80, 0x00, 0x00, 0x00, 0xff, 0xff, 0x81, 0x5c, 0xcd, 0x7c, 0x77, 0x02, 0x00, 0x00,
+	// 413 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x54, 0x4d, 0x8f, 0xda, 0x30,
+	0x14, 0x14, 0x6c, 0x4b, 0xb7, 0x6f, 0x77, 0x59, 0xea, 0x2e, 0x10, 0x65, 0x7b, 0xe8, 0xfa, 0xd0,
+	0x8f, 0x8b, 0x51, 0xe9, 0xbd, 0x12, 0xe2, 0x80, 0x38, 0x54, 0x42, 0xa0, 0x72, 0xab, 0x90, 0x8b,
+	0x5f, 0xc1, 0x6a, 0xb0, 0xd3, 0xc4, 0x81, 0xdf, 0xdc, 0x7f, 0x51, 0xe5, 0xc3, 0x2c, 0x24, 0x26,
+	0x37, 0x3f, 0xf9, 0x79, 0x66, 0x32, 0x33, 0x0a, 0x74, 0xc2, 0x48, 0x1b, 0x3d, 0xe0, 0x89, 0xd9,
+	0xb2, 0xec, 0x48, 0x7f, 0xc2, 0xdd, 0x42, 0x6e, 0xd4, 0x8f, 0x70, 0x8e, 0x7f, 0x13, 0x8c, 0x0d,
+	0x79, 0x80, 0x97, 0xb8, 0xe3, 0x32, 0xf0, 0x1a, 0xef, 0x1b, 0x9f, 0x5e, 0xcf, 0xf3, 0x81, 0xf8,
+	0x70, 0x9d, 0xc4, 0x18, 0x29, 0xbe, 0x43, 0xaf, 0x99, 0x5d, 0x1c, 0xe7, 0xf4, 0x2e, 0xe4, 0x71,
+	0x7c, 0xd0, 0x91, 0xf0, 0xae, 0xf2, 0x3b, 0x3b, 0xd3, 0x0f, 0xd0, 0xb6, 0xf0, 0x71, 0xa8, 0x55,
+	0x8c, 0x29, 0xbe, 0xd1, 0x7f, 0x50, 0x59, 0xfc, 0x6c, 0xa0, 0x93, 0x5c, 0xc6, 0x54, 0x59, 0x19,
+	0xa7, 0x84, 0x8d, 0x1a, 0xc2, 0xa6, 0x9b, 0x30, 0x05, 0xaa, 0x25, 0xfc, 0x08, 0xf7, 0x4b, 0x1e,
+	0x48, 0xc1, 0x0d, 0x9e, 0x7c, 0xb9, 0x53, 0x59, 0xe7, 0x79, 0xb1, 0x80, 0xec, 0xc3, 0xab, 0x54,
+	0xcc, 0x4a, 0x8a, 0x62, 0xb7, 0x95, 0x8e, 0x53, 0x51, 0x67, 0x13, 0x1d, 0x82, 0x3f, 0x41, 0xb3,
+	0xc4, 0x48, 0xfe, 0x96, 0x6b, 0x6e, 0xa4, 0x56, 0x63, 0x2d, 0xb0, 0xd6, 0x76, 0xfa, 0x05, 0x1e,
+	0x9d, 0x6f, 0x0a, 0x1d, 0x04, 0x5e, 0xac, 0xb5, 0xb0, 0x06, 0x65, 0x67, 0xfa, 0x1d, 0x1e, 0xe6,
+	0x18, 0xa3, 0x99, 0x15, 0x8e, 0x58, 0x02, 0xc7, 0x2e, 0x79, 0x82, 0x5b, 0x85, 0x87, 0x55, 0xc9,
+	0xcc, 0x1b, 0x85, 0x07, 0xfb, 0x9a, 0xf6, 0xa1, 0x5b, 0x82, 0xcb, 0xb9, 0xe9, 0x1e, 0xba, 0xe3,
+	0x2d, 0x57, 0x1b, 0x2c, 0x13, 0x5d, 0x34, 0xe7, 0x09, 0x6e, 0x75, 0x20, 0x2a, 0x6c, 0x3a, 0x10,
+	0x16, 0xa2, 0x22, 0xe8, 0xaa, 0x2a, 0xc8, 0x83, 0x5e, 0x99, 0x37, 0x57, 0x34, 0xfc, 0xd7, 0x84,
+	0x9b, 0x51, 0x62, 0xb6, 0x0b, 0x8c, 0xf6, 0x72, 0x8d, 0xe4, 0x33, 0xb4, 0xf2, 0xee, 0x91, 0x36,
+	0x3b, 0xeb, 0xb8, 0x7f, 0xcf, 0x4a, 0xa5, 0x2c, 0x56, 0xa7, 0xaa, 0x58, 0x3d, 0xf6, 0xb0, 0x58,
+	0x3d, 0xa9, 0xd3, 0x00, 0xae, 0x6d, 0x1f, 0x48, 0x87, 0x95, 0x3a, 0xe4, 0xbf, 0x61, 0x95, 0xb2,
+	0xcc, 0xe0, 0xad, 0x23, 0x43, 0xf2, 0xc8, 0x2e, 0xb7, 0xc1, 0x7f, 0xc7, 0xea, 0x62, 0xff, 0x06,
+	0x77, 0x67, 0x99, 0x90, 0x2e, 0x73, 0x45, 0xee, 0xf7, 0x98, 0x33, 0x3a, 0x32, 0x82, 0xf6, 0xb9,
+	0x85, 0xa4, 0xc7, 0x9c, 0x59, 0xfa, 0x7d, 0xe6, 0xf6, 0xfa, 0x57, 0x2b, 0xfb, 0x7b, 0x7c, 0xfd,
+	0x1f, 0x00, 0x00, 0xff, 0xff, 0x3d, 0xd4, 0x90, 0xf3, 0x51, 0x04, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -413,8 +591,10 @@ const _ = grpc.SupportPackageIsVersion4
 type AuthServiceClient interface {
 	SignUp(ctx context.Context, in *SignUpRequest, opts ...grpc.CallOption) (*SignUpResponse, error)
 	SignIn(ctx context.Context, in *SignInRequest, opts ...grpc.CallOption) (*SignInResponse, error)
-	// rpc GetUserInfo(UserInfoRequest) returns (UserInfoResponse);
 	Validate(ctx context.Context, in *ValidateRequest, opts ...grpc.CallOption) (*ValidateResponse, error)
+	GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error)
+	ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error)
+	ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error)
 }
 
 type authServiceClient struct {
@@ -452,12 +632,41 @@ func (c *authServiceClient) Validate(ctx context.Context, in *ValidateRequest, o
 	return out, nil
 }
 
+func (c *authServiceClient) GetVerificationCode(ctx context.Context, in *GetVerificationCodeRequest, opts ...grpc.CallOption) (*GetVerificationCodeResponse, error) {
+	out := new(GetVerificationCodeResponse)
+	err := c.cc.Invoke(ctx, "/AuthService/GetVerificationCode", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ResetPassword(ctx context.Context, in *ResetPasswordRequest, opts ...grpc.CallOption) (*ResetPasswordResponse, error) {
+	out := new(ResetPasswordResponse)
+	err := c.cc.Invoke(ctx, "/AuthService/ResetPassword", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *authServiceClient) ChangePassword(ctx context.Context, in *ChangePasswordRequest, opts ...grpc.CallOption) (*ChangePasswordResponse, error) {
+	out := new(ChangePasswordResponse)
+	err := c.cc.Invoke(ctx, "/AuthService/ChangePassword", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AuthServiceServer is the server API for AuthService service.
 type AuthServiceServer interface {
 	SignUp(context.Context, *SignUpRequest) (*SignUpResponse, error)
 	SignIn(context.Context, *SignInRequest) (*SignInResponse, error)
-	// rpc GetUserInfo(UserInfoRequest) returns (UserInfoResponse);
 	Validate(context.Context, *ValidateRequest) (*ValidateResponse, error)
+	GetVerificationCode(context.Context, *GetVerificationCodeRequest) (*GetVerificationCodeResponse, error)
+	ResetPassword(context.Context, *ResetPasswordRequest) (*ResetPasswordResponse, error)
+	ChangePassword(context.Context, *ChangePasswordRequest) (*ChangePasswordResponse, error)
 }
 
 func RegisterAuthServiceServer(s *grpc.Server, srv AuthServiceServer) {
@@ -518,6 +727,60 @@ func _AuthService_Validate_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AuthService_GetVerificationCode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetVerificationCodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).GetVerificationCode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/AuthService/GetVerificationCode",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).GetVerificationCode(ctx, req.(*GetVerificationCodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ResetPassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ResetPasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ResetPassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/AuthService/ResetPassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ResetPassword(ctx, req.(*ResetPasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AuthService_ChangePassword_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ChangePasswordRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AuthServiceServer).ChangePassword(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/AuthService/ChangePassword",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AuthServiceServer).ChangePassword(ctx, req.(*ChangePasswordRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 var _AuthService_serviceDesc = grpc.ServiceDesc{
 	ServiceName: "AuthService",
 	HandlerType: (*AuthServiceServer)(nil),
@@ -533,6 +796,18 @@ var _AuthService_serviceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Validate",
 			Handler:    _AuthService_Validate_Handler,
+		},
+		{
+			MethodName: "GetVerificationCode",
+			Handler:    _AuthService_GetVerificationCode_Handler,
+		},
+		{
+			MethodName: "ResetPassword",
+			Handler:    _AuthService_ResetPassword_Handler,
+		},
+		{
+			MethodName: "ChangePassword",
+			Handler:    _AuthService_ChangePassword_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

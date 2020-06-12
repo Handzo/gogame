@@ -22,7 +22,7 @@ func AuthServerInterceptor(repo repository.GameRepository, pubsub *pubsub.PubSub
 		if info.FullMethod == "/GameService/OpenSession" {
 			res, err := handler(ctx, req)
 			if err == nil {
-				if bindErr := pubsub.Bind(ctx, remote, res.(*pb.OpenSessionResponse).PlayerId); bindErr != nil {
+				if bindErr := pubsub.Bind(ctx, remote, res.(*pb.OpenSessionResponse).Player.Id); bindErr != nil {
 					return nil, code.BindAdressError
 				}
 			}
