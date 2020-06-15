@@ -1,7 +1,5 @@
 package pubsub
 
-type CloseEvent struct {
-	Event
+type CloseSession struct {
 	SessionId string `json:"session_id"`
-	PlayerId  string `json:"player_id"`
 }

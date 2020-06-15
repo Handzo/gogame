@@ -26,6 +26,10 @@ func NewApiService(authsvc authpb.AuthServiceClient, gamesvc gamepb.GameServiceC
 	svc.router.Register("CloseSession", &gamepb.CloseSessionRequest{}, svc.CloseSession)
 	svc.router.Register("ChangePassword", &gamepb.ChangePasswordRequest{}, svc.ChangePassword)
 
+	// shop
+
+	svc.router.Register("GetProducts", &gamepb.GetProductsRequest{}, svc.GetProducts)
+
 	// table handlers
 	svc.router.Register("CreateTable", &gamepb.CreateTableRequest{}, svc.CreateTable)
 	svc.router.Register("GetOpenTables", &gamepb.GetOpenTablesRequest{}, svc.GetOpenTables)

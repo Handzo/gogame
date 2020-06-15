@@ -113,6 +113,8 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 		return nil, err
 	}
 
+	profile := player.Profile
+
 	response := &pb.OpenSessionResponse{
 		SessionId: session.Id,
 		Player: &pb.Player{
@@ -121,6 +123,14 @@ func (g *gameService) OpenSession(ctx context.Context, req *pb.OpenSessionReques
 			Nuts:     player.Nuts,
 			Gold:     player.Gold,
 			Avatar:   player.Avatar,
+			Profile: &pb.Profile{
+				FirstName: profile.FirstName,
+				LastName:  profile.LastName,
+				Age:       profile.Age,
+				Gender:    string(profile.Gender),
+				Country:   profile.Country,
+				Language:  profile.Language,
+			},
 		},
 	}
 
@@ -142,7 +152,9 @@ func (g *gameService) CloseSession(ctx context.Context, req *pb.CloseSessionRequ
 		g.closeSession(ctx, session)
 	}
 
-	return &pb.CloseSessionResponse{}, nil
+	return &pb.CloseSessionResponse{
+		SessionId: session.Id,
+	}, nil
 }
 
 func (g *gameService) closeSession(ctx context.Context, session *model.Session) error {
@@ -161,10 +173,11 @@ func (g *gameService) closeSession(ctx context.Context, session *model.Session) 
 		}
 	}
 
-	g.pubsub.Publish(ctx, remote, &pubsub.CloseEvent{
-		Event:     pubsub.Event{"CloseSession"},
-		SessionId: session.Id,
-		PlayerId:  session.PlayerId,
+	g.pubsub.Publish(ctx, remote, &pubsub.Event{
+		Event: "CloseSession",
+		Payload: &pubsub.CloseSession{
+			SessionId: session.Id,
+		},
 	})
 	return nil
 }
@@ -182,6 +195,31 @@ func (g *gameService) ChangePassword(ctx context.Context, req *pb.ChangePassword
 	}
 
 	return &pb.ChangePasswordResponse{}, nil
+}
+
+func (g *gameService) GetProducts(ctx context.Context, req *pb.GetProductsRequest) (*pb.GetProductsResponse, error) {
+	prods, err := g.repo.GetProducts(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	products := make([]*pb.Product, len(prods))
+	for i, p := range prods {
+		products[i] = &pb.Product{
+			Id:          p.Id,
+			Title:       p.Title,
+			Description: p.Description,
+			Price:       p.Price,
+			Currency:    string(p.Currency),
+		}
+	}
+	return &pb.GetProductsResponse{
+		Products: products,
+	}, nil
+}
+
+func (g *gameService) PurchaseProduct(ctx context.Context, req *pb.PurchaseProductRequest) (*pb.PurchaseProductResponse, error) {
+	return &pb.PurchaseProductResponse{}, nil
 }
 
 func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) error {
@@ -240,7 +278,7 @@ func (g *gameService) beforeSessionClosed(ctx context.Context, playerId string) 
 
 func (g *gameService) CreateTable(ctx context.Context, req *pb.CreateTableRequest) (*pb.CreateTableResponse, error) {
 	g.logger.Bg().Info("create table")
-	table, err := g.repo.CreateTable(ctx, ctx.Value("player_id").(string), req.UnitType, req.Bet)
+	table, err := g.repo.CreateTable(ctx, ctx.Value("player_id").(string), req.Currency, req.Bet)
 	if err != nil {
 		return nil, err
 	}
@@ -551,10 +589,12 @@ func (g *gameService) MakeMove(ctx context.Context, req *pb.MakeMoveRequest) (*p
 		return nil, err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.PlayerMoved{
-		Event: pubsub.Event{"PlayerMoved"},
-		Card:  req.Card,
-		Order: participant.Order,
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.Event{
+		Event: "PlayerMoved",
+		Payload: &pubsub.PlayerMoved{
+			Card:  req.Card,
+			Order: participant.Order,
+		},
 	})
 
 	signature, err := enginesig.Parse(res.Signature)
@@ -594,12 +634,14 @@ func (g *gameService) startGame(ctx context.Context, task *rmq.Task) error {
 	}
 
 	// TOOD: maybe set table data, participants
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.GameStarted{
-		Event: pubsub.Event{"GameStarted"},
-		Table: pubsub.Table{
-			Id: table.Id,
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.Event{
+		Event: "GameStarted",
+		Payload: &pubsub.GameStarted{
+			Table: pubsub.Table{
+				Id: table.Id,
+			},
+			StartTime: table.StartTime,
 		},
-		StartTime: table.StartTime,
 	})
 
 	g.worker.AddTask(rmq.NewTask(START_ROUND, table.Id, rmq.WithDelay(time.Second)))
@@ -687,18 +729,21 @@ func (g *gameService) startRound(ctx context.Context, task *rmq.Task) error {
 	}
 
 	logger.Info("Sending cards to players")
-	ev := pubsub.RoundStarted{
-		Event: pubsub.Event{"RoundStarted"},
+	ev := &pubsub.Event{
+		Event: "RoundStarted",
+	}
+
+	payload := &pubsub.RoundStarted{
 		Table: tableData,
 	}
 
 	nocards := tableData.Participants
 
 	for i, participant := range nocards {
-		send := ev
-		send.Table.Participants = copyParticipants(nocards)
-		send.Table.Participants[i].Cards = sig.PlayerCards[participant.Order-1]
-		go g.pubsub.ToPlayer(ctx, participant.Player.Id, send)
+		payload.Table.Participants = copyParticipants(nocards)
+		payload.Table.Participants[i].Cards = sig.PlayerCards[participant.Order-1]
+		ev.Payload = payload
+		go g.pubsub.ToPlayer(ctx, participant.Player.Id, ev)
 	}
 
 	g.worker.AddTask(rmq.NewTask(START_DEAL, table.Id, rmq.WithDelay(time.Second)))
@@ -786,12 +831,14 @@ func (g *gameService) nextMove(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.WaitForMove{
-		Event:   pubsub.Event{"WaitForMove"},
-		TableId: table.Id,
-		Participant: pubsub.Participant{
-			Id:    participant.Id,
-			Order: signature.Turn,
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.Event{
+		Event: "WaitForMove",
+		Payload: &pubsub.WaitForMove{
+			TableId: table.Id,
+			Participant: pubsub.Participant{
+				Id:    participant.Id,
+				Order: signature.Turn,
+			},
 		},
 	})
 
@@ -825,13 +872,15 @@ func (g *gameService) finishDeal(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.DealFinished{
-		Event: pubsub.Event{"DealFinished"},
-		Table: pubsub.Table{
-			Id:         table.Id,
-			Turn:       sig.Turn + 1,
-			Team1Score: sig.Team1Scores,
-			Team2Score: sig.Team2Scores,
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.Event{
+		Event: "DealFinished",
+		Payload: &pubsub.DealFinished{
+			Table: pubsub.Table{
+				Id:         table.Id,
+				Turn:       sig.Turn + 1,
+				Team1Score: sig.Team1Scores,
+				Team2Score: sig.Team2Scores,
+			},
 		},
 	})
 
@@ -875,12 +924,14 @@ func (g *gameService) finishRound(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(task.Topic).Publish(ctx, &pubsub.RoundFinished{
-		Event: pubsub.Event{"RoundFinished"},
-		Table: pubsub.Table{
-			Id:         table.Id,
-			Team1Total: sig.Team1Total,
-			Team2Total: sig.Team2Total,
+	g.pubsub.Room(task.Topic).Publish(ctx, &pubsub.Event{
+		Event: "RoundFinished",
+		Payload: &pubsub.RoundFinished{
+			Table: pubsub.Table{
+				Id:         table.Id,
+				Team1Total: sig.Team1Total,
+				Team2Total: sig.Team2Total,
+			},
 		},
 	})
 
@@ -911,9 +962,11 @@ func (g *gameService) finishGame(ctx context.Context, task *rmq.Task) error {
 		return err
 	}
 
-	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.GameFinished{
-		Event:   pubsub.Event{"GameFinished"},
-		EndTime: table.EndTime,
+	g.pubsub.Room(table.Id).Publish(ctx, &pubsub.Event{
+		Event: "GameFinished",
+		Payload: &pubsub.GameFinished{
+			EndTime: table.EndTime,
+		},
 	})
 
 	return nil

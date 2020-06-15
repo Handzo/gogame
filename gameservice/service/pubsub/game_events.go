@@ -5,23 +5,19 @@ import (
 )
 
 type GameStarted struct {
-	Event
 	Table     Table     `json:"table_id"`
 	StartTime time.Time `json:"start_time"`
 }
 
 type GameFinished struct {
-	Event
 	EndTime time.Time `json:"end_time"`
 }
 
 type RoundStarted struct {
-	Event
 	Table Table `json:"table"`
 }
 
 type RoundFinished struct {
-	Event
 	Table Table `json:"table"`
 }
 
@@ -29,18 +25,15 @@ type DealStarted struct {
 }
 
 type DealFinished struct {
-	Event
 	Table Table `json:"table"`
 }
 
 type WaitForMove struct {
-	Event
 	TableId     string      `json:"table_id"`
 	Participant Participant `json:"participant"`
 }
 
 type PlayerMoved struct {
-	Event
 	Card  string `json:"card"`
 	Order int    `json:"order"`
 }

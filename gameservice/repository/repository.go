@@ -23,4 +23,6 @@ type GameRepository interface {
 	FindCurrentDealForTable(context.Context, string) (*model.Deal, error)
 	FindCurrentDealOrderForTable(context.Context, string) (*model.DealOrder, error)
 	FindParticipantWithOrder(context.Context, string, int) (*model.Participant, error)
+	GetProducts(context.Context) ([]*model.Product, error)
+	GetProduct(context.Context, string) (*model.Product, error)
 }

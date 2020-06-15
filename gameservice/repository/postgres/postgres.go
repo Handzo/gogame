@@ -39,24 +39,29 @@ func New(redis *redis.Client, tracer opentracing.Tracer, logger log.Factory) *pg
 	DB.AddQueryHook(basemodel.NewDBLogger(tracer))
 
 	tables := []basemodel.Model{
-		&model.PlayerInfo{},
+		&model.Profile{},
 		&model.Player{},
 		&model.Session{},
-		&model.Unit{},
 		&model.Table{},
 		&model.Participant{},
 		&model.Round{},
 		&model.Deal{},
 		&model.DealOrder{},
+		&model.GoodItem{},
+		&model.Good{},
+		&model.Product{},
+		&model.ProductToGood{},
 	}
 
 	force := true
+
+	orm.RegisterTable((*model.ProductToGood)(nil))
 
 	if err := basemodel.Sync(DB, tables, force); err != nil {
 		panic(err)
 	}
 
-	if err := (&model.Unit{}).Populate(DB, force); err != nil {
+	if err := (&model.Product{}).Populate(DB, force); err != nil {
 		panic(err)
 	}
 
@@ -101,31 +106,40 @@ func (r *pgGameRepository) Update(ctx context.Context, model interface{}, column
 }
 
 func (r *pgGameRepository) SelectOrInsertPlayer(ctx context.Context, player *model.Player) (bool, error) {
+	logger := r.logger.For(ctx)
 	// created, err := r.DB.ModelContext(ctx, player).
 	// 	Where(`user_id = ?user_id`).
 	// 	OnConflict(`DO NOTHING`).
 	// 	SelectOrInsert(player)
 	created, err := r.DB.ModelContext(ctx, player).
 		Where(`user_id = ?user_id`).
-		// Relation(`Profile`).
+		Relation(`Profile`).
 		Relation(`Sessions`, func(q *orm.Query) (*orm.Query, error) {
 			return q.Where(`closed_at IS NULL`), nil
 		}).
 		OnConflict(`DO NOTHING`).
 		SelectOrInsert(player)
 
-	// r.logger.For(ctx).Info(player.Profile)
-	// if player.Profile == nil {
-	// 	profile := &model.Profile{}
-	// 	if _, err = r.DB.ModelContext(ctx, profile).Insert(profile); err != nil {
-	// 		return false, err
-	// 	}
-	// 	player.Profile = profile
-	// 	player.ProfileId = profile.Id
-	// }
+	if player.Profile == nil {
+		profile := &model.Profile{}
+		if _, err = r.DB.ModelContext(ctx, profile).Insert(); err != nil {
+			return false, err
+		}
+		player.Profile = profile
+		player.ProfileId = profile.Id
+		_, err := r.DB.ModelContext(ctx, player).
+			Column(`profile_id`).
+			WherePK().
+			Update()
+
+		if err != nil {
+			logger.Error(err)
+			return false, err
+		}
+	}
 
 	if err != nil {
-		r.logger.For(ctx).Error(err)
+		logger.Error(err)
 		return false, err
 	}
 
@@ -172,32 +186,32 @@ func (r *pgGameRepository) GetOpenedSessionForRemote(ctx context.Context, remote
 	return session, nil
 }
 
-func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, unitType string, bet uint32) (*model.Table, error) {
+func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, currency string, bet uint32) (*model.Table, error) {
 	logger := r.logger.For(ctx)
 
-	unit := &model.Unit{}
-	err := r.DB.ModelContext(ctx, unit).
-		Where(`unit_type = ?`, unitType).
-		Column(`id`, `unit_type`).
-		Select()
-	if err != nil {
-		logger.Error(err)
-		return nil, err
-	}
+	// unit := &model.Unit{}
+	// err := r.DB.ModelContext(ctx, unit).
+	// 	Where(`unit_type = ?`, unitType).
+	// 	Column(`id`, `unit_type`).
+	// 	Select()
+	// if err != nil {
+	// 	logger.Error(err)
+	// 	return nil, err
+	// }
 
 	logger.Info("Inserting new table",
-		log.String("unit_type", unitType),
+		log.String("currency", currency),
 		log.Int64("bet", int64(bet)),
 		log.String("creator_id", creatorId),
 	)
 
 	table := &model.Table{
 		Bet:       bet,
-		UnitId:    unit.Id,
+		Currency:  model.Currency(currency),
 		CreatorId: creatorId,
 	}
 
-	_, err = r.DB.ModelContext(ctx, table).Insert()
+	_, err := r.DB.ModelContext(ctx, table).Insert()
 	if err != nil {
 		logger.Error(err)
 		return nil, err
@@ -224,7 +238,6 @@ func (r *pgGameRepository) CreateTable(ctx context.Context, creatorId string, un
 func (r *pgGameRepository) FindTable(ctx context.Context, tableId string) (*model.Table, error) {
 	table := &model.Table{}
 	err := r.DB.ModelContext(ctx, table).
-		Relation(`Unit`).
 		Relation(`Participants`).
 		Relation(`Participants.Player`).
 		Where(`"table"."id" = ?`, tableId).
@@ -377,4 +390,46 @@ func (r *pgGameRepository) startSpan(ctx context.Context, operationName string) 
 	}
 
 	return ctx, span
+}
+
+func (r *pgGameRepository) GetProducts(ctx context.Context) ([]*model.Product, error) {
+	logger := r.logger.For(ctx)
+
+	logger.Info("Requesting all products")
+
+	products := []*model.Product{}
+
+	err := r.DB.ModelContext(ctx, &products).
+		Column(`id`, `title`, `description`, `price`, `currency`).
+		Select()
+
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	return products, nil
+}
+
+func (r *pgGameRepository) GetProduct(ctx context.Context, productId string) (*model.Product, error) {
+	logger := r.logger.For(ctx)
+
+	logger.Info("Request product", log.String("product_id", productId))
+
+	product := &model.Product{}
+
+	err := r.DB.ModelContext(ctx, product).
+		Relation(`Goods.good_item_id`).
+		Relation(`Goods.amount`).
+		Relation(`Goods.GoodItem.title`).
+		Relation(`Goods.GoodItem.description`).
+		Where(`id = ?`, productId).
+		Select()
+
+	if err != nil {
+		logger.Error(err)
+		return nil, err
+	}
+
+	return nil, nil
 }
